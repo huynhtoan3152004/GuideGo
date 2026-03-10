@@ -1,0 +1,6 @@
+@PRMGuideGo_HostAddress = http://localhost:5157
+
+GET {{PRMGuideGo_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
