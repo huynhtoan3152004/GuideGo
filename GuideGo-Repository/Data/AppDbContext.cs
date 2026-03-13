@@ -33,6 +33,7 @@ public class AppDbContext : DbContext
             e.HasKey(u => u.Id);
             e.Property(u => u.Id).HasDefaultValueSql("gen_random_uuid()");
             e.HasIndex(u => u.Email).IsUnique();
+            e.Property(u => u.IsActive).HasDefaultValue(true);
             e.Property(u => u.Role)
              .HasConversion<string>()
              .HasMaxLength(20);
