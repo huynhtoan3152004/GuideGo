@@ -1,3 +1,5 @@
 <Solution>
+  <Project Path="GuideGo-Repository/GuideGo-Repository.csproj" />
+  <Project Path="GuideGo-Service/GuideGo-Service.csproj" />
   <Project Path="PRMGuideGo/PRMGuideGo.csproj" />
 </Solution>
