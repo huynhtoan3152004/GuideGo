@@ -28,4 +28,33 @@ public class ReviewRepository : GenericRepository<Review>, IReviewRepository
     {
         return await _context.Tours.AnyAsync(tour => tour.Id == tourId && tour.GuideId != null);
     }
+
+    public async Task RecalculateGuideAverageRatingByTourIdAsync(Guid tourId)
+    {
+        var guideId = await _context.Tours
+            .Where(tour => tour.Id == tourId)
+            .Select(tour => tour.GuideId)
+            .FirstOrDefaultAsync();
+
+        if (guideId is null)
+        {
+            return;
+        }
+
+        var averageRating = await (from review in _context.Reviews
+                                   join tour in _context.Tours on review.TourId equals tour.Id
+                                   where tour.GuideId == guideId
+                                   select (double?)review.Rating)
+            .AverageAsync();
+
+        var guide = await _context.Guides.FirstOrDefaultAsync(entity => entity.Id == guideId.Value);
+        if (guide is null)
+        {
+            return;
+        }
+
+        guide.Rating = averageRating.HasValue
+            ? Math.Round((decimal)averageRating.Value, 1, MidpointRounding.AwayFromZero)
+            : 0;
+    }
 }

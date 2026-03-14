@@ -46,6 +46,9 @@ public class ReviewService : IReviewService
         await _reviewRepository.AddAsync(review);
         await _reviewRepository.SaveChangesAsync();
 
+        await _reviewRepository.RecalculateGuideAverageRatingByTourIdAsync(review.TourId);
+        await _reviewRepository.SaveChangesAsync();
+
         return (true, "Create review successfully.");
     }
 
@@ -63,6 +66,9 @@ public class ReviewService : IReviewService
         _reviewRepository.Update(review);
         await _reviewRepository.SaveChangesAsync();
 
+        await _reviewRepository.RecalculateGuideAverageRatingByTourIdAsync(review.TourId);
+        await _reviewRepository.SaveChangesAsync();
+
         return (true, "Update review successfully.");
     }
 
@@ -74,7 +80,12 @@ public class ReviewService : IReviewService
             return (false, "Review not found.");
         }
 
+        var tourId = review.TourId;
+
         _reviewRepository.Remove(review);
+        await _reviewRepository.SaveChangesAsync();
+
+        await _reviewRepository.RecalculateGuideAverageRatingByTourIdAsync(tourId);
         await _reviewRepository.SaveChangesAsync();
 
         return (true, "Delete review successfully.");
