@@ -51,13 +51,18 @@ public class UserService : IUserService
         return user is null ? null : MapToDto(user);
     }
 
-    public async Task<(bool Success, string Message)> CreateGuideUserAsync(CreateUserRequestDto request)
+    public async Task<(bool Success, string Message)> CreateUserAsync(CreateUserRequestDto request)
     {
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
         var existingUser = await _userRepository.GetByEmailAsync(normalizedEmail);
         if (existingUser is not null)
         {
             return (false, "Create user unsuccessfully. Email already exists.");
+        }
+
+        if (!Enum.TryParse<UserRole>(request.Role?.Trim(), true, out var parsedRole))
+        {
+            return (false, "Create user unsuccessfully. Role is invalid.");
         }
 
         var user = new User
@@ -67,7 +72,7 @@ public class UserService : IUserService
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             Phone = request.Phone.Trim(),
             AvatarUrl = request.AvatarUrl?.Trim(),
-            Role = UserRole.Guide,
+            Role = parsedRole,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
@@ -102,6 +107,42 @@ public class UserService : IUserService
         user.Email = normalizedEmail;
         user.Phone = request.Phone?.Trim();
         user.AvatarUrl = request.AvatarUrl?.Trim();
+
+        var hasRoleUpdate = !string.IsNullOrWhiteSpace(request.Role);
+        if (hasRoleUpdate)
+        {
+            if (!Enum.TryParse<UserRole>(request.Role?.Trim(), true, out var parsedRole))
+            {
+                return (false, "Update user unsuccessfully. Role is invalid.");
+            }
+
+            if (isAdmin)
+            {
+                if (actorId == id)
+                {
+                    return (false, "Admin cannot update their own role.");
+                }
+
+                if (user.Role == UserRole.Admin)
+                {
+                    return (false, "Admin cannot update role of an Admin account.");
+                }
+
+                if (parsedRole == UserRole.Admin)
+                {
+                    return (false, "Admin cannot promote another user to Admin role.");
+                }
+
+                user.Role = parsedRole;
+            }
+            else
+            {
+                if (parsedRole != user.Role)
+                {
+                    return (false, "You cannot change your own role.");
+                }
+            }
+        }
 
         if (!string.IsNullOrWhiteSpace(request.Password))
         {

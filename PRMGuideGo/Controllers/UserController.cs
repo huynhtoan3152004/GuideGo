@@ -57,7 +57,7 @@ public class UserController : ControllerBase
             });
         }
 
-        var result = await _userService.CreateGuideUserAsync(request);
+        var result = await _userService.CreateUserAsync(request);
         if (!result.Success)
         {
             return BadRequest(new
@@ -108,7 +108,12 @@ public class UserController : ControllerBase
 
         if (!result.Success)
         {
-            if (result.Message.Contains("permission", StringComparison.OrdinalIgnoreCase))
+            if (result.Message.Contains("permission", StringComparison.OrdinalIgnoreCase)
+                || result.Message.Contains("Only admin can update role", StringComparison.OrdinalIgnoreCase)
+                || result.Message.Contains("cannot update their own role", StringComparison.OrdinalIgnoreCase)
+                || result.Message.Contains("cannot change your own role", StringComparison.OrdinalIgnoreCase)
+                || result.Message.Contains("cannot update role of an Admin account", StringComparison.OrdinalIgnoreCase)
+                || result.Message.Contains("promote another user to Admin role", StringComparison.OrdinalIgnoreCase))
             {
                 return StatusCode(StatusCodes.Status403Forbidden, new
                 {

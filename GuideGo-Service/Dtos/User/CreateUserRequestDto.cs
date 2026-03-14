@@ -26,4 +26,8 @@ public class CreateUserRequestDto
 
     [JsonPropertyName("avatar_url")]
     public string? AvatarUrl { get; set; }
+
+    [Required(ErrorMessage = "Role is required.")]
+    [JsonPropertyName("role")]
+    public string Role { get; set; } = string.Empty;
 }
