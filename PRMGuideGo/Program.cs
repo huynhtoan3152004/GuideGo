@@ -1,4 +1,6 @@
 using GuideGo_Repository.Data;
+using GuideGo_Service.Interfaces;
+using GuideGo_Service.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +12,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         npgsql => npgsql.MigrationsAssembly("GuideGo-Repository")
     ).UseSnakeCaseNamingConvention()
 );
+
+// ── Services ──────────────────────────────────────────────────────────────────
+builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
 
 // ── Controllers / Swagger ─────────────────────────────────────────────────────
 builder.Services.AddControllers();

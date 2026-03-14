@@ -1,0 +1,71 @@
+using GuideGo_Repository.DTOs;
+using GuideGo_Service.Interfaces;
+using Microsoft.AspNetCore.Mvc;
+
+namespace PRMGuideGo.Controllers;
+
+[ApiController]
+[Route("api/bookings")]
+public class BookingController : ControllerBase
+{
+    private readonly IBookingService _bookingService;
+
+    public BookingController(IBookingService bookingService)
+    {
+        _bookingService = bookingService;
+    }
+
+    // POST /api/bookings
+    [HttpPost]
+    public async Task<IActionResult> CreateBooking([FromBody] BookingCreateDto dto)
+    {
+        try
+        {
+            var results = await _bookingService.CreateBookingAsync(dto);
+            return Ok(results);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    // GET /api/bookings?userId={userId}
+    [HttpGet]
+    public async Task<IActionResult> GetUserBookings([FromQuery] Guid userId)
+    {
+        var bookings = await _bookingService.GetUserBookingsAsync(userId);
+        return Ok(bookings);
+    }
+
+    // GET /api/bookings/{id}
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetBookingById(Guid id)
+    {
+        var booking = await _bookingService.GetBookingByIdAsync(id);
+        if (booking is null)
+            return NotFound(new { message = "Booking not found." });
+        return Ok(booking);
+    }
+
+    // PUT /api/bookings/{id}/cancel
+    [HttpPut("{id:guid}/cancel")]
+    public async Task<IActionResult> CancelBooking(Guid id)
+    {
+        try
+        {
+            var success = await _bookingService.CancelBookingAsync(id);
+            if (!success)
+                return NotFound(new { message = "Booking not found." });
+            return Ok(new { message = "Booking cancelled successfully." });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+}
