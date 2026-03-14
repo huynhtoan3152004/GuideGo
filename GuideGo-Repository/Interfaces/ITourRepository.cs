@@ -5,6 +5,19 @@ namespace GuideGo_Repository.Interfaces;
 public interface ITourRepository
 {
     Task<IEnumerable<Tour>> GetAllActiveToursAsync();
+    Task<(IEnumerable<Tour> Items, int TotalItems)> SearchActiveToursAsync(
+        string? keyword,
+        string? city,
+        Guid? locationId,
+        string? guideLanguage,
+        bool verifiedGuideOnly,
+        decimal? minPrice,
+        decimal? maxPrice,
+        DateOnly? startDate,
+        DateOnly? endDate,
+        string? sortBy,
+        int page,
+        int pageSize);
     Task<Tour?> GetTourByIdAsync(Guid id);
     Task<Tour> AddTourAsync(Tour tour);
     Task UpdateTourAsync(Tour tour);

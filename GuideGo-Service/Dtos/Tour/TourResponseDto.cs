@@ -19,11 +19,23 @@ public class TourResponseDto
     [JsonPropertyName("location_name")]
     public string? LocationName { get; set; }
 
+    [JsonPropertyName("city")]
+    public string? City { get; set; }
+
     [JsonPropertyName("guide_id")]
     public Guid? GuideId { get; set; }
 
     [JsonPropertyName("guide_name")]
     public string? GuideName { get; set; }
+
+    [JsonPropertyName("guide_experience_years")]
+    public int? GuideExperienceYears { get; set; }
+
+    [JsonPropertyName("guide_languages")]
+    public IEnumerable<string> GuideLanguages { get; set; } = [];
+
+    [JsonPropertyName("guide_is_verified")]
+    public bool GuideIsVerified { get; set; }
 
     [JsonPropertyName("price_per_person")]
     public decimal PricePerPerson { get; set; }

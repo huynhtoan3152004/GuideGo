@@ -25,6 +25,100 @@ public class TourRepository : GenericRepository<Tour>, ITourRepository
             .ToListAsync();
     }
 
+    public async Task<(IEnumerable<Tour> Items, int TotalItems)> SearchActiveToursAsync(
+        string? keyword,
+        string? city,
+        Guid? locationId,
+        string? guideLanguage,
+        bool verifiedGuideOnly,
+        decimal? minPrice,
+        decimal? maxPrice,
+        DateOnly? startDate,
+        DateOnly? endDate,
+        string? sortBy,
+        int page,
+        int pageSize)
+    {
+        var query = _dbSet
+            .AsNoTracking()
+            .Where(tour => tour.IsActive)
+            .Include(tour => tour.Location)
+            .Include(tour => tour.Guide)
+                .ThenInclude(guide => guide!.User)
+            .Include(tour => tour.Schedules)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            var normalizedKeyword = keyword.Trim().ToLower();
+            query = query.Where(tour =>
+                tour.Title.ToLower().Contains(normalizedKeyword) ||
+                (tour.Description != null && tour.Description.ToLower().Contains(normalizedKeyword)));
+        }
+
+        if (!string.IsNullOrWhiteSpace(city))
+        {
+            var normalizedCity = city.Trim().ToLower();
+            query = query.Where(tour => tour.Location.City != null && tour.Location.City.ToLower().Contains(normalizedCity));
+        }
+
+        if (locationId.HasValue)
+        {
+            query = query.Where(tour => tour.LocationId == locationId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(guideLanguage))
+        {
+            var normalizedLanguage = guideLanguage.Trim().ToLower();
+            query = query.Where(tour =>
+                tour.Guide != null &&
+                tour.Guide.Languages.Any(language => language.ToLower() == normalizedLanguage));
+        }
+
+        if (verifiedGuideOnly)
+        {
+            query = query.Where(tour => tour.Guide != null && tour.Guide.IsVerified);
+        }
+
+        if (minPrice.HasValue)
+        {
+            query = query.Where(tour => tour.PricePerPerson >= minPrice.Value);
+        }
+
+        if (maxPrice.HasValue)
+        {
+            query = query.Where(tour => tour.PricePerPerson <= maxPrice.Value);
+        }
+
+        if (startDate.HasValue)
+        {
+            query = query.Where(tour => tour.Schedules.Any(schedule => schedule.StartDate >= startDate.Value));
+        }
+
+        if (endDate.HasValue)
+        {
+            query = query.Where(tour => tour.Schedules.Any(schedule => schedule.EndDate <= endDate.Value));
+        }
+
+        query = (sortBy ?? "created_at").Trim().ToLower() switch
+        {
+            "price_asc" => query.OrderBy(tour => tour.PricePerPerson),
+            "price_desc" => query.OrderByDescending(tour => tour.PricePerPerson),
+            "rating_desc" => query.OrderByDescending(tour => tour.Rating),
+            _ => query.OrderByDescending(tour => tour.CreatedAt)
+        };
+
+        var totalItems = await query.CountAsync();
+        var skip = (page - 1) * pageSize;
+
+        var items = await query
+            .Skip(skip)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, totalItems);
+    }
+
     public async Task<Tour?> GetTourByIdAsync(Guid id)
     {
         return await _dbSet

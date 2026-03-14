@@ -32,6 +32,18 @@ public class TourController : ControllerBase
     }
 
     /// <summary>
+    /// Tìm kiếm tour theo từ khóa, địa điểm, giá, ngày đi, ngôn ngữ và trạng thái xác minh guide.
+    /// </summary>
+    /// <param name="request">Bộ lọc tìm kiếm tour.</param>
+    /// <returns>Kết quả tìm kiếm có phân trang.</returns>
+    [HttpGet("search")]
+    public async Task<IActionResult> Search([FromQuery] SearchToursRequestDto request)
+    {
+        var result = await _tourService.SearchToursAsync(request);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Lấy chi tiết một tour theo id.
     /// </summary>
     /// <param name="id">Id tour.</param>

@@ -20,6 +20,37 @@ public class TourService : ITourService
         return tours.Select(MapToDto);
     }
 
+    public async Task<TourSearchResultDto> SearchToursAsync(SearchToursRequestDto request)
+    {
+        var page = request.Page <= 0 ? 1 : request.Page;
+        var pageSize = request.PageSize <= 0 ? 20 : Math.Min(request.PageSize, 100);
+
+        var (items, totalItems) = await _tourRepository.SearchActiveToursAsync(
+            request.Keyword,
+            request.City,
+            request.LocationId,
+            request.GuideLanguage,
+            request.VerifiedGuideOnly,
+            request.MinPrice,
+            request.MaxPrice,
+            request.StartDate,
+            request.EndDate,
+            request.SortBy,
+            page,
+            pageSize);
+
+        var totalPages = totalItems == 0 ? 0 : (int)Math.Ceiling(totalItems / (double)pageSize);
+
+        return new TourSearchResultDto
+        {
+            Items = items.Select(MapToDto),
+            Page = page,
+            PageSize = pageSize,
+            TotalItems = totalItems,
+            TotalPages = totalPages
+        };
+    }
+
     public async Task<TourResponseDto?> GetTourByIdAsync(Guid id)
     {
         var tour = await _tourRepository.GetTourByIdAsync(id);
@@ -196,8 +227,12 @@ public class TourService : ITourService
             Description = tour.Description,
             LocationId = tour.LocationId,
             LocationName = tour.Location?.Name,
+            City = tour.Location?.City,
             GuideId = tour.GuideId,
             GuideName = tour.Guide?.User?.FullName,
+            GuideExperienceYears = tour.Guide?.ExperienceYears,
+            GuideLanguages = tour.Guide?.Languages ?? [],
+            GuideIsVerified = tour.Guide?.IsVerified ?? false,
             PricePerPerson = tour.PricePerPerson,
             MaxPeople = tour.MaxPeople,
             DurationDays = tour.DurationDays,

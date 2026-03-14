@@ -15,6 +15,11 @@ GET {{PRMGuideGo_HostAddress}}/api/tour
 Accept: application/json
 
 ###
+### Search tour theo nhu cầu (public)
+GET {{PRMGuideGo_HostAddress}}/api/tour/search?keyword=ha%20noi&city=H%C3%A0%20N%E1%BB%99i&guide_language=vi&verified_guide_only=true&min_price=100000&max_price=500000&page=1&page_size=10
+Accept: application/json
+
+###
 ### Lấy chi tiết tour theo id (public)
 GET {{PRMGuideGo_HostAddress}}/api/tour/44444444-4444-4444-4444-444444444444
 Accept: application/json
@@ -54,5 +59,22 @@ Authorization: Bearer {{token}}
 ###
 ### Xóa mềm tour (Guide owner/Admin)
 DELETE {{PRMGuideGo_HostAddress}}/api/tour/55555555-5555-5555-5555-555555555555
+Authorization: Bearer {{token}}
+
+###
+### Thêm tour vào giỏ hàng (Tourist/Admin)
+POST {{PRMGuideGo_HostAddress}}/api/cart/items
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+	"tour_id": "44444444-4444-4444-4444-444444444444",
+	"schedule_id": "66666666-6666-6666-6666-666666666666",
+	"people_count": 2
+}
+
+###
+### Xem giỏ hàng hiện tại (Tourist/Admin)
+GET {{PRMGuideGo_HostAddress}}/api/cart
 Authorization: Bearer {{token}}
 

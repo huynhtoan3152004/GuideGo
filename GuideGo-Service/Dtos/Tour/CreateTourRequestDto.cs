@@ -13,7 +13,7 @@ public class CreateTourRequestDto
     /// </summary>
     [Required(ErrorMessage = "Tiêu đề là bắt buộc.")]
     [MaxLength(200, ErrorMessage = "Tiêu đề tối đa 200 ký tự.")]
-    [JsonPropertyName("title")]
+    [JsonPropertyName("title")] 
     public string Title { get; set; } = string.Empty;
 
     /// <summary>
