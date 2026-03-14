@@ -35,6 +35,8 @@ builder.Services.AddScoped<ICartRepository, CartRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
+builder.Services.AddScoped<IGuideRepository, GuideRepository>();
+builder.Services.AddScoped<IGuideService, GuideService>();
 builder.Services.AddScoped<ITourService, TourService>();
 builder.Services.AddScoped<ICartService, CartService>();
 
