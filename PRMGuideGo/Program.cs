@@ -1,4 +1,6 @@
 using GuideGo_Repository.Data;
+using GuideGo_Repository.Repositories;
+using GuideGo_Repository.Repositories.Interfaces;
 using GuideGo_Service.Interfaces;
 using GuideGo_Service.Services;
 using Microsoft.EntityFrameworkCore;
@@ -13,9 +15,13 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     ).UseSnakeCaseNamingConvention()
 );
 
+// ── Repositories ──────────────────────────────────────────────────────────────
+builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+
 // ── Services ──────────────────────────────────────────────────────────────────
 builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IVnPayService, VnPayService>();
 
 // ── Controllers / Swagger ─────────────────────────────────────────────────────
 builder.Services.AddControllers();

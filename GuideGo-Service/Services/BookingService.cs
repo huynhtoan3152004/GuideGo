@@ -1,7 +1,7 @@
-using GuideGo_Repository.Data;
 using GuideGo_Repository.DTOs;
 using GuideGo_Repository.Entities;
 using GuideGo_Repository.Enums;
+using GuideGo_Repository.Repositories.Interfaces;
 using GuideGo_Service.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,16 +9,20 @@ namespace GuideGo_Service.Services;
 
 public class BookingService : IBookingService
 {
-    private readonly AppDbContext _context;
+    private readonly IGenericRepository<Booking> _bookingRepo;
+    private readonly IGenericRepository<Cart> _cartRepo;
 
-    public BookingService(AppDbContext context)
+    public BookingService(
+        IGenericRepository<Booking> bookingRepo,
+        IGenericRepository<Cart> cartRepo)
     {
-        _context = context;
+        _bookingRepo = bookingRepo;
+        _cartRepo    = cartRepo;
     }
 
     public async Task<IEnumerable<BookingResponseDto>> CreateBookingAsync(BookingCreateDto dto)
     {
-        var cart = await _context.Carts
+        var cart = await _cartRepo.Query()
             .Include(c => c.Items)
                 .ThenInclude(i => i.Schedule)
                     .ThenInclude(s => s.Tour)
@@ -30,7 +34,6 @@ public class BookingService : IBookingService
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
-        // Validate all items before creating any booking
         foreach (var item in cart.Items)
         {
             if (item.Schedule.StartDate <= today)
@@ -46,31 +49,29 @@ public class BookingService : IBookingService
 
         foreach (var item in cart.Items)
         {
-            var totalPrice = item.Schedule.Tour.PricePerPerson * item.PeopleCount;
-
             var booking = new Booking
             {
-                UserId = cart.UserId,
-                ScheduleId = item.ScheduleId,
+                UserId      = cart.UserId,
+                ScheduleId  = item.ScheduleId,
                 PeopleCount = item.PeopleCount,
-                TotalPrice = totalPrice,
-                Status = BookingStatus.Pending,
-                CreatedAt = DateTime.UtcNow
+                TotalPrice  = item.Schedule.Tour.PricePerPerson * item.PeopleCount,
+                Status      = BookingStatus.Pending,
+                CreatedAt   = DateTime.UtcNow
             };
 
             item.Schedule.AvailableSlots -= item.PeopleCount;
             bookings.Add(booking);
         }
 
-        await _context.Bookings.AddRangeAsync(bookings);
-        await _context.SaveChangesAsync();
+        await _bookingRepo.AddRangeAsync(bookings);
+        await _bookingRepo.SaveChangesAsync();
 
         return bookings.Zip(cart.Items, (b, i) => MapToResponse(b, i.Schedule)).ToList();
     }
 
     public async Task<IEnumerable<BookingResponseDto>> GetUserBookingsAsync(Guid userId)
     {
-        var bookings = await _context.Bookings
+        var bookings = await _bookingRepo.Query()
             .Include(b => b.Schedule)
                 .ThenInclude(s => s.Tour)
             .Where(b => b.UserId == userId)
@@ -82,7 +83,7 @@ public class BookingService : IBookingService
 
     public async Task<BookingResponseDto?> GetBookingByIdAsync(Guid bookingId)
     {
-        var booking = await _context.Bookings
+        var booking = await _bookingRepo.Query()
             .Include(b => b.Schedule)
                 .ThenInclude(s => s.Tour)
             .FirstOrDefaultAsync(b => b.Id == bookingId);
@@ -92,12 +93,11 @@ public class BookingService : IBookingService
 
     public async Task<bool> CancelBookingAsync(Guid bookingId)
     {
-        var booking = await _context.Bookings
+        var booking = await _bookingRepo.Query()
             .Include(b => b.Schedule)
             .FirstOrDefaultAsync(b => b.Id == bookingId);
 
-        if (booking is null)
-            return false;
+        if (booking is null) return false;
 
         if (booking.Status == BookingStatus.Cancelled)
             throw new InvalidOperationException("Booking is already cancelled.");
@@ -105,21 +105,21 @@ public class BookingService : IBookingService
         booking.Status = BookingStatus.Cancelled;
         booking.Schedule.AvailableSlots += booking.PeopleCount;
 
-        await _context.SaveChangesAsync();
+        await _bookingRepo.SaveChangesAsync();
         return true;
     }
 
     private static BookingResponseDto MapToResponse(Booking booking, TourSchedule schedule) => new()
     {
-        Id = booking.Id,
-        UserId = booking.UserId,
-        ScheduleId = booking.ScheduleId,
-        TourTitle = schedule.Tour.Title,
-        StartDate = schedule.StartDate,
-        EndDate = schedule.EndDate,
+        Id          = booking.Id,
+        UserId      = booking.UserId,
+        ScheduleId  = booking.ScheduleId,
+        TourTitle   = schedule.Tour.Title,
+        StartDate   = schedule.StartDate,
+        EndDate     = schedule.EndDate,
         PeopleCount = booking.PeopleCount,
-        TotalPrice = booking.TotalPrice,
-        Status = booking.Status.ToString(),
-        CreatedAt = booking.CreatedAt
+        TotalPrice  = booking.TotalPrice,
+        Status      = booking.Status.ToString(),
+        CreatedAt   = booking.CreatedAt
     };
 }
