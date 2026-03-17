@@ -1,4 +1,6 @@
 using GuideGo_Repository.Data;
+using GuideGo_Service.Interfaces;
+using GuideGo_Service.Services;
 using GuideGo_Repository.Interfaces;
 using GuideGo_Repository.Repositories;
 using GuideGo_Service.Interfaces;
@@ -21,13 +23,17 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     ).UseSnakeCaseNamingConvention()
 );
 
+// ── Services ──────────────────────────────────────────────────────────────────
+builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+
+
 // ── Controllers / Swagger ─────────────────────────────────────────────────────
 builder.Services.AddControllers();
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
     options.SuppressModelStateInvalidFilter = true;
 });
-
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
 builder.Services.AddScoped<ITourRepository, TourRepository>();
