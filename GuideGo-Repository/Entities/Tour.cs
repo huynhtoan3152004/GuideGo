@@ -19,7 +19,9 @@ public class Tour
     public int MaxPeople { get; set; }
     public int DurationDays { get; set; }
     public decimal Rating { get; set; }
+    public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation
     public Location Location { get; set; } = null!;
