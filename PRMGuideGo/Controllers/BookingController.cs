@@ -1,11 +1,14 @@
+using System.Security.Claims;
 using GuideGo_Repository.DTOs;
 using GuideGo_Service.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace PRMGuideGo.Controllers;
 
 [ApiController]
 [Route("api/bookings")]
+[Authorize]
 public class BookingController : ControllerBase
 {
     private readonly IBookingService _bookingService;
@@ -19,14 +22,21 @@ public class BookingController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateBooking([FromBody] BookingCreateDto dto)
     {
+        var userRole = User.FindFirstValue("role") ?? "Tourist";
+        if (!Guid.TryParse(User.FindFirstValue("id"), out var userId))
+            return Unauthorized(new { message = "Invalid token." });
         try
         {
-            var results = await _bookingService.CreateBookingAsync(dto);
+            var results = await _bookingService.CreateBookingAsync(dto, userId, userRole);
             return Ok(results);
         }
         catch (KeyNotFoundException ex)
         {
             return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new { message = ex.Message });
         }
         catch (InvalidOperationException ex)
         {

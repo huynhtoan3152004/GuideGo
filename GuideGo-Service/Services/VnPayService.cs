@@ -32,23 +32,21 @@ public class VnPayService : IVnPayService
         _returnUrl   = config["VnPay:ReturnUrl"]  ?? throw new InvalidOperationException("VnPay:ReturnUrl missing");
     }
 
-    public async Task<string> CreatePaymentUrlAsync(Guid bookingId, string ipAddress)
+    public async Task<string> CreatePaymentUrlAsync(List<Guid> bookingIds, string ipAddress)
     {
-        var booking = await _bookingRepo.Query()
-            .Include(b => b.Payment)
-            .FirstOrDefaultAsync(b => b.Id == bookingId)
-            ?? throw new KeyNotFoundException("Booking not found.");
+        var bookings = await _bookingRepo.Query()
+            .Where(b => bookingIds.Contains(b.Id) && b.PaymentId == null)
+            .ToListAsync();
 
-        if (booking.Status != BookingStatus.Pending)
+        if (bookings.Count != bookingIds.Count)
+            throw new KeyNotFoundException("One or more bookings not found or already have a payment.");
+
+        if (bookings.Any(b => b.Status != BookingStatus.Pending))
             throw new InvalidOperationException("Only pending bookings can be paid.");
-
-        if (booking.Payment is not null)
-            throw new InvalidOperationException("Payment already exists for this booking.");
 
         var payment = new Payment
         {
-            BookingId     = bookingId,
-            Amount        = booking.TotalPrice,
+            Amount        = bookings.Sum(b => b.TotalPrice),
             PaymentMethod = "VNPay",
             Status        = PaymentStatus.Pending
         };
@@ -56,9 +54,14 @@ public class VnPayService : IVnPayService
         await _paymentRepo.AddAsync(payment);
         await _paymentRepo.SaveChangesAsync();
 
+        foreach (var booking in bookings)
+            booking.PaymentId = payment.Id;
+
+        await _bookingRepo.SaveChangesAsync();
+
         var txnRef     = payment.Id.ToString("N");
         var amountVnd  = (long)(payment.Amount * 100);
-        var orderInfo  = $"Thanh toan booking {bookingId}";
+        var orderInfo  = $"Thanh toan {bookings.Count} tour";
         var createDate = DateTime.UtcNow.AddHours(7);
 
         return VnPayHelper.BuildPaymentUrl(
@@ -85,7 +88,7 @@ public class VnPayService : IVnPayService
             return new VnPayReturnResponseDto { Success = false, Message = "Invalid transaction reference." };
 
         var payment = await _paymentRepo.Query()
-            .Include(p => p.Booking)
+            .Include(p => p.Bookings)
             .FirstOrDefaultAsync(p => p.Id == paymentId);
 
         if (payment is null)
@@ -106,8 +109,9 @@ public class VnPayService : IVnPayService
 
         if (isSuccess)
         {
-            payment.PaidAt         = DateTime.UtcNow;
-            payment.Booking.Status = BookingStatus.Confirmed;
+            payment.PaidAt = DateTime.UtcNow;
+            foreach (var booking in payment.Bookings)
+                booking.Status = BookingStatus.Confirmed;
         }
 
         await _paymentRepo.SaveChangesAsync();
