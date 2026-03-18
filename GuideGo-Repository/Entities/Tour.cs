@@ -16,6 +16,8 @@ public class Tour
     public Guid? CompanyId { get; set; }
     public Guid? GuideId { get; set; }
     public decimal PricePerPerson { get; set; }
+    public decimal? GroupPricePerPerson { get; set; }
+    public int? MinGroupSize { get; set; }
     public int MaxPeople { get; set; }
     public int DurationDays { get; set; }
     public decimal Rating { get; set; }

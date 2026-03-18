@@ -77,6 +77,7 @@ public class AppDbContext : DbContext
             e.HasKey(t => t.Id);
             e.Property(t => t.Id).HasDefaultValueSql("gen_random_uuid()");
             e.Property(t => t.PricePerPerson).HasColumnType("decimal(10,2)");
+            e.Property(t => t.GroupPricePerPerson).HasColumnType("decimal(10,2)");
             e.Property(t => t.Rating).HasColumnType("decimal(2,1)");
             e.Property(t => t.IsActive).HasDefaultValue(true);
             e.Property(t => t.UpdatedAt).HasDefaultValueSql("now()");
@@ -165,7 +166,7 @@ public class AppDbContext : DbContext
              .OnDelete(DeleteBehavior.Restrict);
         });
 
-        // ── Payment (1:1 Booking) ─────────────────────────────────────────────
+        // ── Payment (1:Many Bookings) ─────────────────────────────────────────
         modelBuilder.Entity<Payment>(e =>
         {
             e.HasKey(p => p.Id);
@@ -174,11 +175,10 @@ public class AppDbContext : DbContext
             e.Property(p => p.Status)
              .HasConversion<string>()
              .HasMaxLength(20);
-            e.HasOne(p => p.Booking)
+            e.HasMany(p => p.Bookings)
              .WithOne(b => b.Payment)
-             .HasForeignKey<Payment>(p => p.BookingId)
-             .OnDelete(DeleteBehavior.Cascade);
-            e.HasIndex(p => p.BookingId).IsUnique();
+             .HasForeignKey(b => b.PaymentId)
+             .OnDelete(DeleteBehavior.SetNull);
         });
 
         // ── Review ────────────────────────────────────────────────────────────

@@ -3,6 +3,7 @@ using System;
 using GuideGo_Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GuideGo_Repository.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260318080328_PaymentOneToManyBookings")]
+    partial class PaymentOneToManyBookings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -436,10 +439,6 @@ namespace GuideGo_Repository.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("duration_days");
 
-                    b.Property<decimal?>("GroupPricePerPerson")
-                        .HasColumnType("decimal(10,2)")
-                        .HasColumnName("group_price_per_person");
-
                     b.Property<Guid?>("GuideId")
                         .HasColumnType("uuid")
                         .HasColumnName("guide_id");
@@ -457,10 +456,6 @@ namespace GuideGo_Repository.Migrations
                     b.Property<int>("MaxPeople")
                         .HasColumnType("integer")
                         .HasColumnName("max_people");
-
-                    b.Property<int?>("MinGroupSize")
-                        .HasColumnType("integer")
-                        .HasColumnName("min_group_size");
 
                     b.Property<decimal>("PricePerPerson")
                         .HasColumnType("decimal(10,2)")

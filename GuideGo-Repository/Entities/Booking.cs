@@ -14,6 +14,7 @@ public class Booking
     public decimal TotalPrice { get; set; }
     public BookingStatus Status { get; set; } = BookingStatus.Pending;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public Guid? PaymentId { get; set; }
 
     // Navigation
     public User User { get; set; } = null!;

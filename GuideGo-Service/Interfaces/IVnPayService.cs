@@ -6,7 +6,7 @@ namespace GuideGo_Service.Interfaces;
 public interface IVnPayService
 {
     /// <summary>Creates a Payment record and returns the VNPay redirect URL.</summary>
-    Task<string> CreatePaymentUrlAsync(Guid bookingId, string ipAddress);
+    Task<string> CreatePaymentUrlAsync(List<Guid> bookingIds, string ipAddress);
 
     /// <summary>Handles the redirect return from VNPay (user-facing callback).</summary>
     Task<VnPayReturnResponseDto> ProcessReturnAsync(IQueryCollection queryParams);
