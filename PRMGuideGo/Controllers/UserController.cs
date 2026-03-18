@@ -1,11 +1,13 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using GuideGo_Service.Dtos.User;
 using GuideGo_Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace PRMGuideGo.Controllers;
-
+/// <summary>
+/// API quản lý người dùng hệ thống.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
@@ -18,6 +20,9 @@ public class UserController : ControllerBase
         _userService = userService;
     }
 
+    /// <summary>
+    /// API lấy toàn bộ danh sách người dùng trong hệ thống chỉ Admin được dùng
+    /// </summary>
     [HttpGet]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetAll()
@@ -26,6 +31,9 @@ public class UserController : ControllerBase
         return Ok(users);
     }
 
+    /// <summary>
+    /// API lấy chi tiết 1 người dùng theo id 
+    /// </summary>
     [HttpGet("{id:guid}")]
     [AllowAnonymous]
     public async Task<IActionResult> GetById(Guid id)
@@ -39,6 +47,9 @@ public class UserController : ControllerBase
         return Ok(user);
     }
 
+    /// <summary>
+    /// API tạo người dùng chỉ Admin được dùng
+    /// </summary>
     [HttpPost]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Create([FromBody] CreateUserRequestDto request)
@@ -74,6 +85,9 @@ public class UserController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// API cập nhật thông tin người dùng chỉ Admin được dùng và chỉnh chủ tài khoản đang đăng nhập được dùng
+    /// </summary>
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Put(Guid id, [FromBody] UpdateUserRequestDto request)
     {
@@ -145,6 +159,9 @@ public class UserController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// API xóa người dùng chỉ Admin được dùng
+    /// </summary>
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(Guid id)

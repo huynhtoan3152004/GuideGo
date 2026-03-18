@@ -54,10 +54,17 @@ public class UserService : IUserService
     public async Task<(bool Success, string Message)> CreateUserAsync(CreateUserRequestDto request)
     {
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        var normalizedPhone = request.Phone.Trim();
         var existingUser = await _userRepository.GetByEmailAsync(normalizedEmail);
         if (existingUser is not null)
         {
             return (false, "Create user unsuccessfully. Email already exists.");
+        }
+
+        var existingPhoneUser = await _userRepository.GetByPhoneAsync(normalizedPhone);
+        if (existingPhoneUser is not null)
+        {
+            return (false, "Create user unsuccessfully. Phone already exists.");
         }
 
         if (!Enum.TryParse<UserRole>(request.Role?.Trim(), true, out var parsedRole))
@@ -70,7 +77,7 @@ public class UserService : IUserService
             FullName = request.FullName.Trim(),
             Email = normalizedEmail,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-            Phone = request.Phone.Trim(),
+            Phone = normalizedPhone,
             AvatarUrl = request.AvatarUrl?.Trim(),
             Role = parsedRole,
             IsActive = true,
@@ -97,15 +104,25 @@ public class UserService : IUserService
         }
 
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        var normalizedPhone = request.Phone?.Trim();
         var emailOwner = await _userRepository.GetByEmailAsync(normalizedEmail);
         if (emailOwner is not null && emailOwner.Id != id)
         {
             return (false, "Update user unsuccessfully. Email already exists.");
         }
 
+        if (!string.IsNullOrWhiteSpace(normalizedPhone))
+        {
+            var phoneOwner = await _userRepository.GetByPhoneAsync(normalizedPhone);
+            if (phoneOwner is not null && phoneOwner.Id != id)
+            {
+                return (false, "Update user unsuccessfully. Phone already exists.");
+            }
+        }
+
         user.FullName = request.FullName.Trim();
         user.Email = normalizedEmail;
-        user.Phone = request.Phone?.Trim();
+        user.Phone = normalizedPhone;
         user.AvatarUrl = request.AvatarUrl?.Trim();
 
         var hasRoleUpdate = !string.IsNullOrWhiteSpace(request.Role);

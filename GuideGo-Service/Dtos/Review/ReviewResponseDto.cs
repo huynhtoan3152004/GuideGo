@@ -13,6 +13,12 @@ public class ReviewResponseDto
     [JsonPropertyName("user_id")]
     public Guid UserId { get; set; }
 
+    [JsonPropertyName("full_name")]
+    public string? FullName { get; set; }
+
+    [JsonPropertyName("tour_title")]
+    public string? TourTitle { get; set; }
+
     [JsonPropertyName("rating")]
     public int Rating { get; set; }
 

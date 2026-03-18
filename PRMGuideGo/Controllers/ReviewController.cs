@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace PRMGuideGo.Controllers;
 
+/// <summary>
+/// API quản lý đánh giá hướng dẫn viên.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
@@ -18,27 +21,25 @@ public class ReviewController : ControllerBase
         _reviewService = reviewService;
     }
 
+    /// <summary>
+    /// API lấy toàn bộ review công khai, không cần đăng nhập.
+    /// </summary>
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> GetAll()
     {
-        if (!TryGetCurrentUserId(out var userId))
-        {
-            return Unauthorized(new { statusCode = StatusCodes.Status401Unauthorized, message = "Invalid token." });
-        }
-
-        var reviews = await _reviewService.GetMyReviewsAsync(userId);
+        var reviews = await _reviewService.GetAllAsync();
         return Ok(reviews);
     }
 
+    /// <summary>
+    /// API lấy chi tiết 1 review theo id công khai, không cần đăng nhập.
+    /// </summary>
     [HttpGet("{id:guid}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetById(Guid id)
     {
-        if (!TryGetCurrentUserId(out var userId))
-        {
-            return Unauthorized(new { statusCode = StatusCodes.Status401Unauthorized, message = "Invalid token." });
-        }
-
-        var review = await _reviewService.GetMyReviewByIdAsync(id, userId);
+        var review = await _reviewService.GetByIdAsync(id);
         if (review is null)
         {
             return NotFound(new { statusCode = StatusCodes.Status404NotFound, message = "Review not found." });
@@ -47,6 +48,9 @@ public class ReviewController : ControllerBase
         return Ok(review);
     }
 
+    /// <summary>
+    /// API tạo review chỉ Tourist được dùng và chỉ khi đã hoàn thành tour đã đặt.
+    /// </summary>
     [HttpPost]
     [Authorize(Roles = "Tourist")]
     public async Task<IActionResult> Create([FromBody] CreateReviewRequestDto request)
@@ -75,6 +79,9 @@ public class ReviewController : ControllerBase
         return Ok(new { statusCode = StatusCodes.Status200OK, message = result.Message });
     }
 
+    /// <summary>
+    /// API cập nhật review chỉ Admin hoặc người tạo review được dùng.
+    /// </summary>
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateReviewRequestDto request)
     {
@@ -97,12 +104,33 @@ public class ReviewController : ControllerBase
         var result = await _reviewService.UpdateAsync(id, request, userId, isAdmin);
         if (!result.Success)
         {
+            if (result.Message.Contains("not authorized", StringComparison.OrdinalIgnoreCase))
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new
+                {
+                    statusCode = StatusCodes.Status403Forbidden,
+                    message = result.Message
+                });
+            }
+
+            if (result.Message.Contains("not found", StringComparison.OrdinalIgnoreCase))
+            {
+                return NotFound(new
+                {
+                    statusCode = StatusCodes.Status404NotFound,
+                    message = result.Message
+                });
+            }
+
             return BadRequest(new { statusCode = StatusCodes.Status400BadRequest, message = result.Message });
         }
 
         return Ok(new { statusCode = StatusCodes.Status200OK, message = result.Message });
     }
 
+    /// <summary>
+    /// API xóa review chỉ Admin hoặc người tạo review được dùng.
+    /// </summary>
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {
@@ -115,6 +143,24 @@ public class ReviewController : ControllerBase
         var result = await _reviewService.DeleteAsync(id, userId, isAdmin);
         if (!result.Success)
         {
+            if (result.Message.Contains("not authorized", StringComparison.OrdinalIgnoreCase))
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new
+                {
+                    statusCode = StatusCodes.Status403Forbidden,
+                    message = result.Message
+                });
+            }
+
+            if (result.Message.Contains("not found", StringComparison.OrdinalIgnoreCase))
+            {
+                return NotFound(new
+                {
+                    statusCode = StatusCodes.Status404NotFound,
+                    message = result.Message
+                });
+            }
+
             return BadRequest(new { statusCode = StatusCodes.Status400BadRequest, message = result.Message });
         }
 

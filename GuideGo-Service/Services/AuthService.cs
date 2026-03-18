@@ -25,6 +25,7 @@ public class AuthService : IAuthService
     public async Task<AuthResultDto> RegisterAsync(RegisterRequestDto request)
     {
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        var normalizedPhone = request.Phone.Trim();
         var existingUser = await _userRepository.GetByEmailAsync(normalizedEmail);
 
         if (existingUser is not null)
@@ -36,12 +37,22 @@ public class AuthService : IAuthService
             };
         }
 
+        var existingPhoneUser = await _userRepository.GetByPhoneAsync(normalizedPhone);
+        if (existingPhoneUser is not null)
+        {
+            return new AuthResultDto
+            {
+                Success = false,
+                Message = "Register unsuccessfully. Phone already exists."
+            };
+        }
+
         var user = new User
         {
             FullName = request.FullName.Trim(),
             Email = normalizedEmail,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-            Phone = request.Phone.Trim(),
+            Phone = normalizedPhone,
             AvatarUrl = request.AvatarUrl?.Trim(),
             Role = UserRole.Tourist,
             IsActive = true,

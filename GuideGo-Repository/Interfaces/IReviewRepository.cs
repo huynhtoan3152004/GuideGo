@@ -4,6 +4,8 @@ namespace GuideGo_Repository.Interfaces;
 
 public interface IReviewRepository
 {
+    Task<IEnumerable<Review>> GetAllWithDetailsAsync();
+    Task<Review?> GetByIdWithDetailsAsync(Guid id);
     Task<IEnumerable<Review>> GetByUserIdAsync(Guid userId);
     Task<Review?> GetByIdAsync(Guid id);
     Task<Review?> GetByIdAndUserIdAsync(Guid id, Guid userId);

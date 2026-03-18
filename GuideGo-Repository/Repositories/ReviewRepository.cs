@@ -12,6 +12,23 @@ public class ReviewRepository : GenericRepository<Review>, IReviewRepository
     {
     }
 
+    public async Task<IEnumerable<Review>> GetAllWithDetailsAsync()
+    {
+        return await _dbSet
+            .Include(review => review.User)
+            .Include(review => review.Tour)
+            .OrderByDescending(review => review.CreatedAt)
+            .ToListAsync();
+    }
+
+    public async Task<Review?> GetByIdWithDetailsAsync(Guid id)
+    {
+        return await _dbSet
+            .Include(review => review.User)
+            .Include(review => review.Tour)
+            .FirstOrDefaultAsync(review => review.Id == id);
+    }
+
     public async Task<IEnumerable<Review>> GetByUserIdAsync(Guid userId)
     {
         return await _dbSet
@@ -68,7 +85,7 @@ public class ReviewRepository : GenericRepository<Review>, IReviewRepository
                       where booking.UserId == userId
                             && schedule.TourId == tourId
                             && booking.Status == BookingStatus.Confirmed
-                            && schedule.EndDate < today
+                        && schedule.EndDate <= today
                       select booking)
             .AnyAsync();
     }

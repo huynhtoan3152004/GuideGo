@@ -14,15 +14,15 @@ public class ReviewService : IReviewService
         _reviewRepository = reviewRepository;
     }
 
-    public async Task<IEnumerable<ReviewResponseDto>> GetMyReviewsAsync(Guid userId)
+    public async Task<IEnumerable<ReviewResponseDto>> GetAllAsync()
     {
-        var reviews = await _reviewRepository.GetByUserIdAsync(userId);
+        var reviews = await _reviewRepository.GetAllWithDetailsAsync();
         return reviews.Select(MapToDto);
     }
 
-    public async Task<ReviewResponseDto?> GetMyReviewByIdAsync(Guid reviewId, Guid userId)
+    public async Task<ReviewResponseDto?> GetByIdAsync(Guid reviewId)
     {
-        var review = await _reviewRepository.GetByIdAndUserIdAsync(reviewId, userId);
+        var review = await _reviewRepository.GetByIdWithDetailsAsync(reviewId);
         return review is null ? null : MapToDto(review);
     }
 
@@ -124,6 +124,8 @@ public class ReviewService : IReviewService
             Id = review.Id,
             TourId = review.TourId,
             UserId = review.UserId,
+            FullName = review.User?.FullName,
+            TourTitle = review.Tour?.Title,
             Rating = review.Rating,
             Comment = review.Comment,
             CreatedAt = review.CreatedAt
