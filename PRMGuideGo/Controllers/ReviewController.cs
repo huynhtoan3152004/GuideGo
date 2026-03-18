@@ -8,7 +8,7 @@ namespace PRMGuideGo.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Tourist")]
+[Authorize]
 public class ReviewController : ControllerBase
 {
     private readonly IReviewService _reviewService;
@@ -48,6 +48,7 @@ public class ReviewController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Tourist")]
     public async Task<IActionResult> Create([FromBody] CreateReviewRequestDto request)
     {
         if (!ModelState.IsValid)
@@ -92,10 +93,11 @@ public class ReviewController : ControllerBase
             return Unauthorized(new { statusCode = StatusCodes.Status401Unauthorized, message = "Invalid token." });
         }
 
-        var result = await _reviewService.UpdateAsync(id, request, userId);
+        var isAdmin = User.IsInRole("Admin") || string.Equals(User.FindFirstValue("role"), "Admin", StringComparison.OrdinalIgnoreCase);
+        var result = await _reviewService.UpdateAsync(id, request, userId, isAdmin);
         if (!result.Success)
         {
-            return NotFound(new { statusCode = StatusCodes.Status404NotFound, message = result.Message });
+            return BadRequest(new { statusCode = StatusCodes.Status400BadRequest, message = result.Message });
         }
 
         return Ok(new { statusCode = StatusCodes.Status200OK, message = result.Message });
@@ -109,10 +111,11 @@ public class ReviewController : ControllerBase
             return Unauthorized(new { statusCode = StatusCodes.Status401Unauthorized, message = "Invalid token." });
         }
 
-        var result = await _reviewService.DeleteAsync(id, userId);
+        var isAdmin = User.IsInRole("Admin") || string.Equals(User.FindFirstValue("role"), "Admin", StringComparison.OrdinalIgnoreCase);
+        var result = await _reviewService.DeleteAsync(id, userId, isAdmin);
         if (!result.Success)
         {
-            return NotFound(new { statusCode = StatusCodes.Status404NotFound, message = result.Message });
+            return BadRequest(new { statusCode = StatusCodes.Status400BadRequest, message = result.Message });
         }
 
         return Ok(new { statusCode = StatusCodes.Status200OK, message = result.Message });

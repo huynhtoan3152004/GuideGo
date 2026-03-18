@@ -34,6 +34,20 @@ public class ReviewService : IReviewService
             return (false, "Create review unsuccessfully. Tour not found or has no guide.");
         }
 
+        // Check if user has a confirmed booking and finished the tour schedule
+        var userHasCompletedBooking = await _reviewRepository.UserHasCompletedBookingForTourAsync(userId, request.TourId);
+        if (!userHasCompletedBooking)
+        {
+            return (false, "Create review unsuccessfully. You can only review tours you completed with confirmed booking.");
+        }
+
+        // Check if user already reviewed this tour (prevent spam)
+        var userAlreadyReviewed = await _reviewRepository.UserAlreadyReviewedTourAsync(userId, request.TourId);
+        if (userAlreadyReviewed)
+        {
+            return (false, "Create review unsuccessfully. You have already reviewed this tour.");
+        }
+
         var review = new Review
         {
             TourId = request.TourId,
@@ -52,12 +66,18 @@ public class ReviewService : IReviewService
         return (true, "Create review successfully.");
     }
 
-    public async Task<(bool Success, string Message)> UpdateAsync(Guid reviewId, UpdateReviewRequestDto request, Guid userId)
+    public async Task<(bool Success, string Message)> UpdateAsync(Guid reviewId, UpdateReviewRequestDto request, Guid userId, bool isAdmin = false)
     {
-        var review = await _reviewRepository.GetByIdAndUserIdAsync(reviewId, userId);
+        var review = await _reviewRepository.GetByIdAsync(reviewId);
         if (review is null)
         {
             return (false, "Review not found.");
+        }
+
+        // Check if user is author or admin
+        if (review.UserId != userId && !isAdmin)
+        {
+            return (false, "You are not authorized to update this review.");
         }
 
         review.Rating = request.Rating;
@@ -72,12 +92,18 @@ public class ReviewService : IReviewService
         return (true, "Update review successfully.");
     }
 
-    public async Task<(bool Success, string Message)> DeleteAsync(Guid reviewId, Guid userId)
+    public async Task<(bool Success, string Message)> DeleteAsync(Guid reviewId, Guid userId, bool isAdmin = false)
     {
-        var review = await _reviewRepository.GetByIdAndUserIdAsync(reviewId, userId);
+        var review = await _reviewRepository.GetByIdAsync(reviewId);
         if (review is null)
         {
             return (false, "Review not found.");
+        }
+
+        // Check if user is author or admin
+        if (review.UserId != userId && !isAdmin)
+        {
+            return (false, "You are not authorized to delete this review.");
         }
 
         var tourId = review.TourId;

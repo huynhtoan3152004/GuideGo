@@ -8,6 +8,8 @@ public interface IReviewRepository
     Task<Review?> GetByIdAsync(Guid id);
     Task<Review?> GetByIdAndUserIdAsync(Guid id, Guid userId);
     Task<bool> TourExistsWithGuideAsync(Guid tourId);
+    Task<bool> UserHasCompletedBookingForTourAsync(Guid userId, Guid tourId);
+    Task<bool> UserAlreadyReviewedTourAsync(Guid userId, Guid tourId);
     Task RecalculateGuideAverageRatingByTourIdAsync(Guid tourId);
     Task AddAsync(Review review);
     void Update(Review review);

@@ -1,5 +1,6 @@
 using GuideGo_Repository.Data;
 using GuideGo_Repository.Entities;
+using GuideGo_Repository.Enums;
 using GuideGo_Repository.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -56,5 +57,24 @@ public class ReviewRepository : GenericRepository<Review>, IReviewRepository
         guide.Rating = averageRating.HasValue
             ? Math.Round((decimal)averageRating.Value, 1, MidpointRounding.AwayFromZero)
             : 0;
+    }
+
+    public async Task<bool> UserHasCompletedBookingForTourAsync(Guid userId, Guid tourId)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        return await (from booking in _context.Bookings
+                      join schedule in _context.TourSchedules on booking.ScheduleId equals schedule.Id
+                      where booking.UserId == userId
+                            && schedule.TourId == tourId
+                            && booking.Status == BookingStatus.Confirmed
+                            && schedule.EndDate < today
+                      select booking)
+            .AnyAsync();
+    }
+
+    public async Task<bool> UserAlreadyReviewedTourAsync(Guid userId, Guid tourId)
+    {
+        return await _dbSet.AnyAsync(review => review.UserId == userId && review.TourId == tourId);
     }
 }
