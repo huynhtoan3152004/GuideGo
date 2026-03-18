@@ -20,7 +20,7 @@ public class BookingService : IBookingService
         _cartRepo    = cartRepo;
     }
 
-    public async Task<IEnumerable<BookingResponseDto>> CreateBookingAsync(BookingCreateDto dto)
+    public async Task<IEnumerable<BookingResponseDto>> CreateBookingAsync(BookingCreateDto dto, Guid userId, string userRole)
     {
         var cart = await _cartRepo.Query()
             .Include(c => c.Items)
@@ -29,9 +29,13 @@ public class BookingService : IBookingService
             .FirstOrDefaultAsync(c => c.Id == dto.CartId)
             ?? throw new KeyNotFoundException("Cart not found.");
 
+        if (cart.UserId != userId)
+            throw new UnauthorizedAccessException("You are not allowed to book from this cart.");
+
         if (!cart.Items.Any())
             throw new InvalidOperationException("Cart is empty.");
 
+        var isCompany = userRole == "Company";
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
         foreach (var item in cart.Items)
@@ -43,18 +47,25 @@ public class BookingService : IBookingService
             if (item.Schedule.AvailableSlots < item.PeopleCount)
                 throw new InvalidOperationException(
                     $"Not enough slots for '{item.Schedule.Tour.Title}'. Available: {item.Schedule.AvailableSlots}.");
+
         }
 
         var bookings = new List<Booking>();
 
         foreach (var item in cart.Items)
         {
+            var unitPrice = isCompany
+                && item.Schedule.Tour.GroupPricePerPerson.HasValue
+                && (!item.Schedule.Tour.MinGroupSize.HasValue || item.PeopleCount >= item.Schedule.Tour.MinGroupSize)
+                    ? item.Schedule.Tour.GroupPricePerPerson.Value
+                    : item.Schedule.Tour.PricePerPerson;
+
             var booking = new Booking
             {
                 UserId      = cart.UserId,
                 ScheduleId  = item.ScheduleId,
                 PeopleCount = item.PeopleCount,
-                TotalPrice  = item.Schedule.Tour.PricePerPerson * item.PeopleCount,
+                TotalPrice  = unitPrice * item.PeopleCount,
                 Status      = BookingStatus.Pending,
                 CreatedAt   = DateTime.UtcNow
             };

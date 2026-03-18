@@ -30,7 +30,7 @@ public class PaymentController : ControllerBase
             if (remoteIp != null && remoteIp.IsIPv6LinkLocal || remoteIp?.ToString() == "::1")
                 remoteIp = System.Net.IPAddress.Parse("127.0.0.1");
             var ipAddress = remoteIp?.ToString() ?? "127.0.0.1";
-            var paymentUrl = await _vnPayService.CreatePaymentUrlAsync(dto.BookingId, ipAddress);
+            var paymentUrl = await _vnPayService.CreatePaymentUrlAsync(dto.BookingIds, ipAddress);
             return Ok(new { paymentUrl });
         }
         catch (KeyNotFoundException ex)
