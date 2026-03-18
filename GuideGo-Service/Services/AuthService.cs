@@ -1,6 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 using GuideGo_Repository.Entities;
 using GuideGo_Repository.Enums;
 using GuideGo_Repository.Interfaces;
@@ -8,6 +5,10 @@ using GuideGo_Service.Dtos.Auth;
 using GuideGo_Service.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace GuideGo_Service.Services;
 
@@ -15,11 +16,13 @@ public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
     private readonly IConfiguration _configuration;
+    private readonly IGuideRepository _guideRepository;
 
-    public AuthService(IUserRepository userRepository, IConfiguration configuration)
+    public AuthService(IUserRepository userRepository, IConfiguration configuration, IGuideRepository guideRepository)
     {
         _userRepository = userRepository;
         _configuration = configuration;
+        _guideRepository = guideRepository;
     }
 
     public async Task<AuthResultDto> RegisterAsync(RegisterRequestDto request)
@@ -82,16 +85,17 @@ public class AuthService : IAuthService
                 Message = "Login unsuccessfully."
             };
         }
+        var guide = (await _guideRepository.FindAsync(g => g.UserId == user.Id)).FirstOrDefault();
 
         return new AuthResultDto
         {
             Success = true,
             Message = "Login successfully.",
-            Token = GenerateJwtToken(user)
+            Token = GenerateJwtToken(user, guide)
         };
     }
 
-    private string GenerateJwtToken(User user)
+    private string GenerateJwtToken(User user, Guide guide)
     {
         var jwtKey = _configuration["Jwt:Key"]
                      ?? throw new InvalidOperationException("Missing Jwt:Key configuration.");
@@ -101,13 +105,17 @@ public class AuthService : IAuthService
             ? minutes
             : 60;
 
-        var claims = new[]
+        var claims = new List<Claim>
         {
             new Claim("id", user.Id.ToString()),
             new Claim("full_name", user.FullName),
             new Claim("email", user.Email),
             new Claim("role", user.Role.ToString())
         };
+        if (guide is not null)
+        {
+            claims.Add(new Claim("guide_id", guide.Id.ToString()));
+        }
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
