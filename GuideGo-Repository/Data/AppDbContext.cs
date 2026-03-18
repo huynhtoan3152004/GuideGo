@@ -33,6 +33,7 @@ public class AppDbContext : DbContext
             e.HasKey(u => u.Id);
             e.Property(u => u.Id).HasDefaultValueSql("gen_random_uuid()");
             e.HasIndex(u => u.Email).IsUnique();
+            e.Property(u => u.IsActive).HasDefaultValue(true);
             e.Property(u => u.Role)
              .HasConversion<string>()
              .HasMaxLength(20);
@@ -77,6 +78,8 @@ public class AppDbContext : DbContext
             e.Property(t => t.Id).HasDefaultValueSql("gen_random_uuid()");
             e.Property(t => t.PricePerPerson).HasColumnType("decimal(10,2)");
             e.Property(t => t.Rating).HasColumnType("decimal(2,1)");
+            e.Property(t => t.IsActive).HasDefaultValue(true);
+            e.Property(t => t.UpdatedAt).HasDefaultValueSql("now()");
             e.HasOne(t => t.Location)
              .WithMany(l => l.Tours)
              .HasForeignKey(t => t.LocationId)
