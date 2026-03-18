@@ -3,8 +3,6 @@ using GuideGo_Service.Interfaces;
 using GuideGo_Service.Services;
 using GuideGo_Repository.Interfaces;
 using GuideGo_Repository.Repositories;
-using GuideGo_Service.Interfaces;
-using GuideGo_Service.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Text;
+using PRMGuideGo.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +21,18 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         npgsql => npgsql.MigrationsAssembly("GuideGo-Repository")
     ).UseSnakeCaseNamingConvention()
 );
+
+// ── SignalR + CORS ────────────────────────────────────────────────
+builder.Services.AddSignalR();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        p => p.AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowAnyOrigin());
+});
+
 
 // ── Services ──────────────────────────────────────────────────────────────────
 builder.Services.AddScoped<IBookingService, BookingService>();
@@ -45,6 +56,8 @@ builder.Services.AddScoped<IGuideRepository, GuideRepository>();
 builder.Services.AddScoped<IGuideService, GuideService>();
 builder.Services.AddScoped<ITourService, TourService>();
 builder.Services.AddScoped<ICartService, CartService>();
+builder.Services.AddScoped<IChatRepository, ChatRepository>();
+builder.Services.AddScoped<IChatService, ChatService>();
 
 var jwtKey = builder.Configuration["Jwt:Key"]
              ?? throw new InvalidOperationException("Missing Jwt:Key configuration.");
@@ -63,6 +76,22 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
             RoleClaimType = "role"
+        };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+
+            if (!string.IsNullOrEmpty(accessToken) &&
+                context.HttpContext.Request.Path.StartsWithSegments("/chatHub"))
+            {
+                context.Token = accessToken;
+            }
+
+            return Task.CompletedTask;
+        }
         };
     });
 builder.Services.AddAuthorization();
@@ -121,10 +150,13 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHub<ChatHub>("/chatHub");
 
 using (var scope = app.Services.CreateScope())
 {
