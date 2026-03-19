@@ -14,10 +14,12 @@ namespace PRMGuideGo.Controllers;
 public class TourController : ControllerBase
 {
     private readonly ITourService _tourService;
+    private readonly ICloudinaryService _cloudinaryService;
 
-    public TourController(ITourService tourService)
+    public TourController(ITourService tourService, ICloudinaryService cloudinaryService)
     {
         _tourService = tourService;
+        _cloudinaryService = cloudinaryService;
     }
 
     /// <summary>
@@ -192,6 +194,76 @@ public class TourController : ControllerBase
         }
 
         return Ok(new { statusCode = StatusCodes.Status200OK, message = result.Message });
+    }
+
+    /// <summary>
+    /// Upload ảnh tour lên Cloudinary và lưu URL vào hệ thống.
+    /// Chỉ owner Guide hoặc Admin được phép.
+    /// </summary>
+    /// <param name="id">Id tour.</param>
+    /// <param name="file">File ảnh upload.</param>
+    /// <param name="cancellationToken">Token hủy request.</param>
+    /// <returns>Kết quả upload ảnh.</returns>
+    [HttpPost("{id:guid}/images")]
+    [Authorize(Roles = "Guide,Admin")]
+    public async Task<IActionResult> UploadImage(Guid id, [FromForm] IFormFile file, CancellationToken cancellationToken)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(new { statusCode = StatusCodes.Status400BadRequest, message = "Vui lòng chọn file ảnh hợp lệ." });
+        }
+
+        if (!file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest(new { statusCode = StatusCodes.Status400BadRequest, message = "Chỉ hỗ trợ upload file ảnh." });
+        }
+
+        if (!TryGetCurrentUserId(out var actorId))
+        {
+            return Unauthorized(new { statusCode = StatusCodes.Status401Unauthorized, message = "Token không hợp lệ." });
+        }
+
+        var isAdmin = User.IsInRole("Admin") ||
+                      string.Equals(User.FindFirstValue("role"), "Admin", StringComparison.OrdinalIgnoreCase);
+
+        await using var stream = file.OpenReadStream();
+        var uploadResult = await _cloudinaryService.UploadImageAsync(stream, file.FileName, cancellationToken);
+        if (!uploadResult.Success || string.IsNullOrWhiteSpace(uploadResult.Url))
+        {
+            return BadRequest(new
+            {
+                statusCode = StatusCodes.Status400BadRequest,
+                message = uploadResult.Message
+            });
+        }
+
+        var saveResult = await _tourService.AddTourImageAsync(id, actorId, isAdmin, uploadResult.Url);
+        if (!saveResult.Success)
+        {
+            if (saveResult.Message.Contains("permission", StringComparison.OrdinalIgnoreCase) ||
+                saveResult.Message.Contains("quyền", StringComparison.OrdinalIgnoreCase))
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { statusCode = StatusCodes.Status403Forbidden, message = saveResult.Message });
+            }
+
+            if (saveResult.Message.Contains("not found", StringComparison.OrdinalIgnoreCase) ||
+                saveResult.Message.Contains("không tìm thấy", StringComparison.OrdinalIgnoreCase))
+            {
+                return NotFound(new { statusCode = StatusCodes.Status404NotFound, message = saveResult.Message });
+            }
+
+            return BadRequest(new { statusCode = StatusCodes.Status400BadRequest, message = saveResult.Message });
+        }
+
+        return Ok(new
+        {
+            statusCode = StatusCodes.Status200OK,
+            message = saveResult.Message,
+            data = new
+            {
+                image_url = uploadResult.Url
+            }
+        });
     }
 
     private bool TryGetCurrentUserId(out Guid userId)

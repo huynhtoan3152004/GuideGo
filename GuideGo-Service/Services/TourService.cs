@@ -164,6 +164,30 @@ public class TourService : ITourService
         return (true, "Xóa tour thành công.");
     }
 
+    public async Task<(bool Success, string Message)> AddTourImageAsync(Guid tourId, Guid actorId, bool isAdmin, string imageUrl)
+    {
+        var tour = await _tourRepository.GetTourByIdAsync(tourId);
+        if (tour is null)
+        {
+            return (false, "Không tìm thấy tour.");
+        }
+
+        var permissionResult = await CheckTourPermissionAsync(tour, actorId, isAdmin);
+        if (!permissionResult.Success)
+        {
+            return permissionResult;
+        }
+
+        await _tourRepository.AddTourImageAsync(new TourImage
+        {
+            TourId = tourId,
+            ImageUrl = imageUrl,
+            CreatedAt = DateTime.UtcNow
+        });
+
+        return (true, "Upload ảnh tour thành công.");
+    }
+
     private async Task<(bool Success, string Message)> CheckTourPermissionAsync(Tour tour, Guid actorId, bool isAdmin)
     {
         if (isAdmin)
@@ -228,6 +252,20 @@ public class TourService : ITourService
             LocationId = tour.LocationId,
             LocationName = tour.Location?.Name,
             City = tour.Location?.City,
+            Latitude = tour.Location?.Latitude,
+            Longitude = tour.Location?.Longitude,
+            Location = tour.Location is null
+                ? null
+                : new TourLocationDto
+                {
+                    Id = tour.Location.Id,
+                    Name = tour.Location.Name,
+                    Address = tour.Location.Address,
+                    City = tour.Location.City,
+                    Country = tour.Location.Country,
+                    Latitude = tour.Location.Latitude,
+                    Longitude = tour.Location.Longitude
+                },
             GuideId = tour.GuideId,
             GuideName = tour.Guide?.User?.FullName,
             GuideExperienceYears = tour.Guide?.ExperienceYears,
@@ -240,6 +278,7 @@ public class TourService : ITourService
             IsActive = tour.IsActive,
             CreatedAt = tour.CreatedAt,
             UpdatedAt = tour.UpdatedAt,
+            ImageUrls = tour.Images.Select(image => image.ImageUrl),
             Schedules = tour.Schedules.Select(schedule => new TourScheduleResponseDto
             {
                 Id = schedule.Id,
