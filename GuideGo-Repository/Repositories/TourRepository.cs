@@ -18,6 +18,7 @@ public class TourRepository : GenericRepository<Tour>, ITourRepository
             .AsNoTracking()
             .Where(tour => tour.IsActive)
             .Include(tour => tour.Location)
+            .Include(tour => tour.Images)
             .Include(tour => tour.Guide)
                 .ThenInclude(guide => guide!.User)
             .Include(tour => tour.Schedules)
@@ -43,6 +44,7 @@ public class TourRepository : GenericRepository<Tour>, ITourRepository
             .AsNoTracking()
             .Where(tour => tour.IsActive)
             .Include(tour => tour.Location)
+            .Include(tour => tour.Images)
             .Include(tour => tour.Guide)
                 .ThenInclude(guide => guide!.User)
             .Include(tour => tour.Schedules)
@@ -124,6 +126,7 @@ public class TourRepository : GenericRepository<Tour>, ITourRepository
         return await _dbSet
             .AsNoTracking()
             .Include(tour => tour.Location)
+            .Include(tour => tour.Images)
             .Include(tour => tour.Guide)
                 .ThenInclude(guide => guide!.User)
             .Include(tour => tour.Schedules)
@@ -153,6 +156,11 @@ public class TourRepository : GenericRepository<Tour>, ITourRepository
         return await _context.Guides.AnyAsync(guide => guide.Id == guideId);
     }
 
+    public async Task<bool> ExistsActiveTourAsync(Guid tourId)
+    {
+        return await _dbSet.AnyAsync(tour => tour.Id == tourId && tour.IsActive);
+    }
+
     public async Task<Guid?> GetGuideIdByUserIdAsync(Guid userId)
     {
         return await _context.Guides
@@ -171,6 +179,12 @@ public class TourRepository : GenericRepository<Tour>, ITourRepository
         return await _context.Bookings.AnyAsync(booking =>
             booking.Schedule.TourId == tourId &&
             (booking.Status == BookingStatus.Pending || booking.Status == BookingStatus.Confirmed));
+    }
+
+    public async Task AddTourImageAsync(TourImage tourImage)
+    {
+        await _context.TourImages.AddAsync(tourImage);
+        await _context.SaveChangesAsync();
     }
 
 }
