@@ -205,8 +205,9 @@ public class TourController : ControllerBase
     /// <param name="cancellationToken">Token hủy request.</param>
     /// <returns>Kết quả upload ảnh.</returns>
     [HttpPost("{id:guid}/images")]
+    [Consumes("multipart/form-data")]
     [Authorize(Roles = "Guide,Admin")]
-    public async Task<IActionResult> UploadImage(Guid id, [FromForm] IFormFile file, CancellationToken cancellationToken)
+    public async Task<IActionResult> UploadImage(Guid id, IFormFile file, CancellationToken cancellationToken)
     {
         if (file is null || file.Length == 0)
         {
