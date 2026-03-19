@@ -11,7 +11,7 @@ namespace PRMGuideGo.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Tourist,Admin")]
+[Authorize(Roles = "Tourist,Company,Admin")]
 public class CartController : ControllerBase
 {
     private readonly ICartService _cartService;

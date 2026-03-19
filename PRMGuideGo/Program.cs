@@ -1,4 +1,6 @@
 using GuideGo_Repository.Data;
+using GuideGo_Repository.Repositories;
+using GuideGo_Repository.Repositories.Interfaces;
 using GuideGo_Service.Interfaces;
 using GuideGo_Service.Services;
 using GuideGo_Repository.Interfaces;
@@ -22,6 +24,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     ).UseSnakeCaseNamingConvention()
 );
 
+// ── Repositories ──────────────────────────────────────────────────────────────
+builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 // ── SignalR + CORS ────────────────────────────────────────────────
 builder.Services.AddSignalR();
 
@@ -37,6 +41,7 @@ builder.Services.AddCors(options =>
 // ── Services ──────────────────────────────────────────────────────────────────
 builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IVnPayService, VnPayService>();
 
 
 // ── Controllers / Swagger ─────────────────────────────────────────────────────
