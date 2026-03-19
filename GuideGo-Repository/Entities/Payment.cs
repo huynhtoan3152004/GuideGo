@@ -8,7 +8,6 @@ namespace GuideGo_Repository.Entities;
 public class Payment
 {
     public Guid Id { get; set; }
-    public Guid BookingId { get; set; }
     public decimal Amount { get; set; }
 
     [MaxLength(50)]
@@ -18,5 +17,5 @@ public class Payment
     public DateTime? PaidAt { get; set; }
 
     // Navigation
-    public Booking Booking { get; set; } = null!;
+    public ICollection<Booking> Bookings { get; set; } = [];
 }
