@@ -11,73 +11,51 @@ namespace GuideGo_Repository.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "payments_booking_id_fkey",
-                table: "payments");
-
-            migrationBuilder.DropIndex(
-                name: "ix_payments_booking_id",
-                table: "payments");
-
-            migrationBuilder.DropColumn(
-                name: "booking_id",
-                table: "payments");
-
-            migrationBuilder.AddColumn<Guid>(
-                name: "payment_id",
-                table: "bookings",
-                type: "uuid",
-                nullable: true);
-
-            migrationBuilder.CreateIndex(
-                name: "ix_bookings_payment_id",
-                table: "bookings",
-                column: "payment_id");
-
-            migrationBuilder.AddForeignKey(
-                name: "fk_bookings_payments_payment_id",
-                table: "bookings",
-                column: "payment_id",
-                principalTable: "payments",
-                principalColumn: "id",
-                onDelete: ReferentialAction.SetNull);
+            migrationBuilder.Sql("ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_booking_id_fkey;");
+            migrationBuilder.Sql("DROP INDEX IF EXISTS ix_payments_booking_id;");
+            migrationBuilder.Sql("ALTER TABLE payments DROP COLUMN IF EXISTS booking_id;");
+            migrationBuilder.Sql("ALTER TABLE bookings ADD COLUMN IF NOT EXISTS payment_id uuid;");
+            migrationBuilder.Sql("CREATE INDEX IF NOT EXISTS ix_bookings_payment_id ON bookings (payment_id);");
+            migrationBuilder.Sql(@"
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'fk_bookings_payments_payment_id'
+    ) THEN
+        ALTER TABLE bookings
+        ADD CONSTRAINT fk_bookings_payments_payment_id
+        FOREIGN KEY (payment_id)
+        REFERENCES payments (id)
+        ON DELETE SET NULL;
+    END IF;
+END $$;");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "fk_bookings_payments_payment_id",
-                table: "bookings");
-
-            migrationBuilder.DropIndex(
-                name: "ix_bookings_payment_id",
-                table: "bookings");
-
-            migrationBuilder.DropColumn(
-                name: "payment_id",
-                table: "bookings");
-
-            migrationBuilder.AddColumn<Guid>(
-                name: "booking_id",
-                table: "payments",
-                type: "uuid",
-                nullable: false,
-                defaultValue: new Guid("00000000-0000-0000-0000-000000000000"));
-
-            migrationBuilder.CreateIndex(
-                name: "ix_payments_booking_id",
-                table: "payments",
-                column: "booking_id",
-                unique: true);
-
-            migrationBuilder.AddForeignKey(
-                name: "fk_payments_bookings_booking_id",
-                table: "payments",
-                column: "booking_id",
-                principalTable: "bookings",
-                principalColumn: "id",
-                onDelete: ReferentialAction.Cascade);
+            migrationBuilder.Sql("ALTER TABLE bookings DROP CONSTRAINT IF EXISTS fk_bookings_payments_payment_id;");
+            migrationBuilder.Sql("DROP INDEX IF EXISTS ix_bookings_payment_id;");
+            migrationBuilder.Sql("ALTER TABLE bookings DROP COLUMN IF EXISTS payment_id;");
+            migrationBuilder.Sql("ALTER TABLE payments ADD COLUMN IF NOT EXISTS booking_id uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';");
+            migrationBuilder.Sql("CREATE UNIQUE INDEX IF NOT EXISTS ix_payments_booking_id ON payments (booking_id);");
+            migrationBuilder.Sql(@"
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'fk_payments_bookings_booking_id'
+    ) THEN
+        ALTER TABLE payments
+        ADD CONSTRAINT fk_payments_bookings_booking_id
+        FOREIGN KEY (booking_id)
+        REFERENCES bookings (id)
+        ON DELETE CASCADE;
+    END IF;
+END $$;");
         }
     }
 }
