@@ -23,8 +23,10 @@ public interface ITourRepository
     Task UpdateTourAsync(Tour tour);
     Task<bool> ExistsLocationAsync(Guid locationId);
     Task<bool> ExistsGuideAsync(Guid guideId);
+    Task<bool> ExistsActiveTourAsync(Guid tourId);
     Task<Guid?> GetGuideIdByUserIdAsync(Guid userId);
     Task<bool> IsTourOwnedByGuideAsync(Guid tourId, Guid guideId);
     Task<bool> HasActiveBookingsAsync(Guid tourId);
+    Task AddTourImageAsync(TourImage tourImage);
     Task<int> SaveChangesAsync();
 }

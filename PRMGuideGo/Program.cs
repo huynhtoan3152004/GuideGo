@@ -1,6 +1,7 @@
 using GuideGo_Repository.Data;
 using GuideGo_Service.Interfaces;
 using GuideGo_Service.Services;
+using GuideGo_Service.Dtos.Cloudinary;
 using GuideGo_Repository.Interfaces;
 using GuideGo_Repository.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -37,6 +38,8 @@ builder.Services.AddCors(options =>
 // ── Services ──────────────────────────────────────────────────────────────────
 builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection(CloudinarySettings.SectionName));
+builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 
 
 // ── Controllers / Swagger ─────────────────────────────────────────────────────
