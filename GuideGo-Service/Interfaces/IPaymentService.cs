@@ -8,4 +8,5 @@ public interface IPaymentService
     Task<PaymentResponseDto> ConfirmPaymentAsync(Guid paymentId);
     Task<PaymentResponseDto> FailPaymentAsync(Guid paymentId);
     Task<PaymentResponseDto?> GetByBookingIdAsync(Guid bookingId);
+    Task<PaymentResponseDto?> GetByPaymentIdAsync(Guid paymentId);
 }
