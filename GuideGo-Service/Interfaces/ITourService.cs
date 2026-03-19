@@ -10,4 +10,5 @@ public interface ITourService
     Task<(bool Success, string Message, TourResponseDto? Data)> CreateTourAsync(CreateTourRequestDto request, Guid actorId, bool isAdmin);
     Task<(bool Success, string Message)> UpdateTourAsync(Guid id, UpdateTourRequestDto request, Guid actorId, bool isAdmin);
     Task<(bool Success, string Message)> DeleteTourAsync(Guid id, Guid actorId, bool isAdmin);
+    Task<(bool Success, string Message)> AddTourImageAsync(Guid tourId, Guid actorId, bool isAdmin, string imageUrl);
 }

@@ -22,6 +22,15 @@ public class TourResponseDto
     [JsonPropertyName("city")]
     public string? City { get; set; }
 
+    [JsonPropertyName("latitude")]
+    public decimal? Latitude { get; set; }
+
+    [JsonPropertyName("longitude")]
+    public decimal? Longitude { get; set; }
+
+    [JsonPropertyName("location")]
+    public TourLocationDto? Location { get; set; }
+
     [JsonPropertyName("guide_id")]
     public Guid? GuideId { get; set; }
 
@@ -57,6 +66,9 @@ public class TourResponseDto
 
     [JsonPropertyName("updated_at")]
     public DateTime UpdatedAt { get; set; }
+
+    [JsonPropertyName("image_urls")]
+    public IEnumerable<string> ImageUrls { get; set; } = [];
 
     [JsonPropertyName("schedules")]
     public IEnumerable<TourScheduleResponseDto> Schedules { get; set; } = [];
