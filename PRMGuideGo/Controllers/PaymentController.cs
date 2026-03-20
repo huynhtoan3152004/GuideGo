@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace PRMGuideGo.Controllers;
 
+/// <summary>
+/// API quản lý thanh toán, tích hợp cổng thanh toán VNPay.
+/// </summary>
 [ApiController]
 [Route("api/payments")]
 public class PaymentController : ControllerBase
@@ -17,9 +20,9 @@ public class PaymentController : ControllerBase
         _vnPayService   = vnPayService;
     }
 
-    // ─── VNPay ───────────────────────────────────────────────────────────────
-
-    // POST /api/payments/vnpay/create-url
+    /// <summary>
+    /// Tạo URL thanh toán VNPay từ danh sách bookingId.
+    /// </summary>
     [HttpPost("vnpay/create-url")]
     public async Task<IActionResult> CreateVnPayUrl([FromBody] VnPayCreateUrlDto dto)
     {
@@ -43,7 +46,9 @@ public class PaymentController : ControllerBase
         }
     }
 
-    // GET /api/payments/vnpay/return  ← VNPay redirects user here after payment
+    /// <summary>
+    /// Callback VNPay redirect người dùng về sau khi thanh toán.
+    /// </summary>
     [HttpGet("vnpay/return")]
     public async Task<IActionResult> VnPayReturn()
     {
@@ -51,7 +56,9 @@ public class PaymentController : ControllerBase
         return Ok(result);
     }
 
-    // GET /api/payments/vnpay/ipn  ← VNPay calls this server-to-server
+    /// <summary>
+    /// IPN endpoint để VNPay gọi server-to-server xác nhận kết quả thanh toán.
+    /// </summary>
     [HttpGet("vnpay/ipn")]
     public async Task<IActionResult> VnPayIpn()
     {
@@ -63,7 +70,9 @@ public class PaymentController : ControllerBase
         return Ok(new { RspCode = "99", Message = result.Message });
     }
 
-    // POST /api/payments
+    /// <summary>
+    /// Tạo bản ghi thanh toán thủ công cho một booking.
+    /// </summary>
     [HttpPost]
     public async Task<IActionResult> CreatePayment([FromBody] PaymentCreateDto dto)
     {
@@ -82,7 +91,9 @@ public class PaymentController : ControllerBase
         }
     }
 
-    // PUT /api/payments/{id}/confirm
+    /// <summary>
+    /// Xác nhận thanh toán thành công theo paymentId.
+    /// </summary>
     [HttpPut("{id:guid}/confirm")]
     public async Task<IActionResult> ConfirmPayment(Guid id)
     {
@@ -101,7 +112,9 @@ public class PaymentController : ControllerBase
         }
     }
 
-    // PUT /api/payments/{id}/fail
+    /// <summary>
+    /// Đánh dấu thanh toán thất bại theo paymentId.
+    /// </summary>
     [HttpPut("{id:guid}/fail")]
     public async Task<IActionResult> FailPayment(Guid id)
     {
@@ -120,7 +133,9 @@ public class PaymentController : ControllerBase
         }
     }
 
-    // GET /api/payments/booking/{bookingId}
+    /// <summary>
+    /// Lấy thông tin thanh toán theo bookingId.
+    /// </summary>
     [HttpGet("booking/{bookingId:guid}")]
     public async Task<IActionResult> GetByBookingId(Guid bookingId)
     {

@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace PRMGuideGo.Controllers;
 
+/// <summary>
+/// API quản lý đặt tour (booking).
+/// </summary>
 [ApiController]
 [Route("api/bookings")]
 [Authorize]
@@ -18,7 +21,9 @@ public class BookingController : ControllerBase
         _bookingService = bookingService;
     }
 
-    // POST /api/bookings
+    /// <summary>
+    /// Tạo booking mới từ giỏ hàng. Yêu cầu đăng nhập.
+    /// </summary>
     [HttpPost]
     public async Task<IActionResult> CreateBooking([FromBody] BookingCreateDto dto)
     {
@@ -44,7 +49,9 @@ public class BookingController : ControllerBase
         }
     }
 
-    // GET /api/bookings?userId={userId}
+    /// <summary>
+    /// Lấy danh sách booking của một người dùng theo userId.
+    /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetUserBookings([FromQuery] Guid userId)
     {
@@ -52,7 +59,9 @@ public class BookingController : ControllerBase
         return Ok(bookings);
     }
 
-    // GET /api/bookings/{id}
+    /// <summary>
+    /// Lấy chi tiết một booking theo id.
+    /// </summary>
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetBookingById(Guid id)
     {
@@ -62,7 +71,9 @@ public class BookingController : ControllerBase
         return Ok(booking);
     }
 
-    // PUT /api/bookings/{id}/cancel
+    /// <summary>
+    /// Hủy một booking theo id. Chỉ được hủy khi booking chưa được xử lý.
+    /// </summary>
     [HttpPut("{id:guid}/cancel")]
     public async Task<IActionResult> CancelBooking(Guid id)
     {
