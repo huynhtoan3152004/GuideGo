@@ -6,4 +6,5 @@ public interface ICartService
 {
     Task<CartResponseDto> GetMyCartAsync(Guid userId);
     Task<(bool Success, string Message)> AddToCartAsync(Guid userId, AddToCartRequestDto request);
+    Task<(bool Success, string Message)> RemoveItemAsync(Guid userId, Guid cartItemId);
 }
