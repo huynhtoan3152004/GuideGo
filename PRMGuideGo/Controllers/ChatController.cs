@@ -7,6 +7,9 @@ using PRMGuideGo.Hubs;
 
 namespace PRMGuideGo.Controllers
 {
+    /// <summary>
+    /// API chat realtime giữa Tourist và Guide qua SignalR.
+    /// </summary>
     [ApiController]
     [Route("api/chats")]
     [Authorize]
@@ -21,7 +24,9 @@ namespace PRMGuideGo.Controllers
             _hubContext = hubContext;
         }
 
-
+        /// <summary>
+        /// Lấy hoặc tạo mới cuộc trò chuyện giữa người dùng hiện tại và một Guide.
+        /// </summary>
         [HttpPost("get-or-create")]
         public async Task<IActionResult> GetOrCreateChat(Guid guideId)
         {
@@ -32,6 +37,9 @@ namespace PRMGuideGo.Controllers
             return Ok(result);
         }
 
+        /// <summary>
+        /// Lấy danh sách tin nhắn trong một cuộc trò chuyện theo chatId.
+        /// </summary>
         [HttpGet("{chatId}/messages")]
         public async Task<IActionResult> GetMessages(Guid chatId)
         {
@@ -42,6 +50,9 @@ namespace PRMGuideGo.Controllers
             return Ok(result);
         }
 
+        /// <summary>
+        /// Gửi tin nhắn trong một cuộc trò chuyện và broadcast qua SignalR.
+        /// </summary>
         [HttpPost("send")]
         public async Task<IActionResult> SendMessage([FromBody] SendMessageRequest request)
         {
@@ -60,6 +71,9 @@ namespace PRMGuideGo.Controllers
             return Ok(message);
         }
 
+        /// <summary>
+        /// Lấy danh sách tất cả cuộc trò chuyện của người dùng hiện tại.
+        /// </summary>
         [HttpGet("my-chats")]
         public async Task<IActionResult> GetMyChats()
         {
