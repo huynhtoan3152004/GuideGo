@@ -64,6 +64,16 @@ public class CartRepository : ICartRepository
         _context.CartItems.Update(item);
     }
 
+    public async Task<CartItem?> GetCartItemByIdAsync(Guid cartItemId)
+    {
+        return await _context.CartItems.FirstOrDefaultAsync(item => item.Id == cartItemId);
+    }
+
+    public void RemoveCartItem(CartItem item)
+    {
+        _context.CartItems.Remove(item);
+    }
+
     public Task<int> SaveChangesAsync()
     {
         return _context.SaveChangesAsync();

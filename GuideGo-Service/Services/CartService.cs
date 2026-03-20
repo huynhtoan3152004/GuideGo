@@ -78,6 +78,26 @@ public class CartService : ICartService
         return (true, "Thêm vào giỏ hàng thành công.");
     }
 
+    public async Task<(bool Success, string Message)> RemoveItemAsync(Guid userId, Guid cartItemId)
+    {
+        var cart = await _cartRepository.GetCartByUserIdAsync(userId);
+        if (cart is null)
+        {
+            return (false, "Không tìm thấy giỏ hàng.");
+        }
+
+        var item = await _cartRepository.GetCartItemByIdAsync(cartItemId);
+        if (item is null || item.CartId != cart.Id)
+        {
+            return (false, "Không tìm thấy item trong giỏ hàng.");
+        }
+
+        _cartRepository.RemoveCartItem(item);
+        await _cartRepository.SaveChangesAsync();
+
+        return (true, "Item removed from cart successfully.");
+    }
+
     private async Task<Cart> EnsureCartExistsAsync(Guid userId)
     {
         var existingCart = await _cartRepository.GetCartByUserIdAsync(userId);

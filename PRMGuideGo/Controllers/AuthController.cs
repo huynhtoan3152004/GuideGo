@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace PRMGuideGo.Controllers;
 
+/// <summary>
+/// API xác thực người dùng: đăng ký và đăng nhập.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
@@ -15,6 +18,9 @@ public class AuthController : ControllerBase
         _authService = authService;
     }
 
+    /// <summary>
+    /// Đăng ký tài khoản mới.
+    /// </summary>
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
     {
@@ -50,6 +56,9 @@ public class AuthController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// Đăng nhập và nhận JWT token.
+    /// </summary>
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
     {
