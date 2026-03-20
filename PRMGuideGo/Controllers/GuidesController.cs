@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace PRMGuideGo.Controllers
 {
+    /// <summary>
+    /// API quản lý hướng dẫn viên (Guide).
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class GuidesController : ControllerBase
@@ -15,6 +18,9 @@ namespace PRMGuideGo.Controllers
             _guideService = guideService;
         }
 
+        /// <summary>
+        /// Lấy danh sách tất cả hướng dẫn viên.
+        /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -27,6 +33,9 @@ namespace PRMGuideGo.Controllers
             });
         }
 
+        /// <summary>
+        /// Lấy chi tiết hướng dẫn viên theo id.
+        /// </summary>
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
@@ -42,6 +51,9 @@ namespace PRMGuideGo.Controllers
             });
         }
 
+        /// <summary>
+        /// Lấy thông tin hướng dẫn viên theo userId.
+        /// </summary>
         [HttpGet("user/{userId}")]
         public async Task<IActionResult> GetByUserId(Guid userId)
         {
@@ -57,6 +69,9 @@ namespace PRMGuideGo.Controllers
             });
         }
 
+        /// <summary>
+        /// Đăng ký trở thành hướng dẫn viên, chờ Admin xét duyệt.
+        /// </summary>
         [HttpPost]
         public async Task<IActionResult> Create(CreateGuideDto dto)
         {
@@ -72,6 +87,9 @@ namespace PRMGuideGo.Controllers
             });
         }
 
+        /// <summary>
+        /// Cập nhật thông tin hướng dẫn viên theo id.
+        /// </summary>
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(Guid id, UpdateGuideDto dto)
         {
@@ -83,6 +101,9 @@ namespace PRMGuideGo.Controllers
             return Ok(new { message = "Guide updated successfully" });
         }
 
+        /// <summary>
+        /// Xóa hướng dẫn viên theo id.
+        /// </summary>
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
@@ -94,6 +115,9 @@ namespace PRMGuideGo.Controllers
             return Ok(new { message = "Guide deleted successfully" });
         }
 
+        /// <summary>
+        /// Duyệt xác minh hướng dẫn viên. Chỉ Admin được phép.
+        /// </summary>
         [HttpPut("{id}/verify")]
         public async Task<IActionResult> VerifyGuide(Guid id)
         {
@@ -105,6 +129,9 @@ namespace PRMGuideGo.Controllers
             return Ok(new { message = "Guide verified successfully" });
         }
 
+        /// <summary>
+        /// Từ chối yêu cầu đăng ký hướng dẫn viên. Chỉ Admin được phép.
+        /// </summary>
         [HttpDelete("{id}/reject")]
         public async Task<IActionResult> RejectGuide(Guid id)
         {
