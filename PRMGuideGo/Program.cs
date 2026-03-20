@@ -55,11 +55,13 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 });
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
+builder.Services.AddScoped<ILocationRepository, LocationRepository>();
 builder.Services.AddScoped<ITourRepository, TourRepository>();
 builder.Services.AddScoped<ICartRepository, CartRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
+builder.Services.AddScoped<ILocationService, LocationService>();
 builder.Services.AddScoped<IGuideRepository, GuideRepository>();
 builder.Services.AddScoped<IGuideService, GuideService>();
 builder.Services.AddScoped<ITourService, TourService>();
