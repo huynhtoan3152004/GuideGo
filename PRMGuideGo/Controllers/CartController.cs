@@ -66,6 +66,26 @@ public class CartController : ControllerBase
         return Ok(new { statusCode = StatusCodes.Status200OK, message = result.Message });
     }
 
+    /// <summary>
+    /// Xóa một item khỏi giỏ hàng.
+    /// </summary>
+    [HttpDelete("items/{itemId:guid}")]
+    public async Task<IActionResult> RemoveItem(Guid itemId)
+    {
+        if (!TryGetCurrentUserId(out var userId))
+        {
+            return Unauthorized(new { statusCode = StatusCodes.Status401Unauthorized, message = "Token không hợp lệ." });
+        }
+
+        var result = await _cartService.RemoveItemAsync(userId, itemId);
+        if (!result.Success)
+        {
+            return NotFound(new { statusCode = StatusCodes.Status404NotFound, message = result.Message });
+        }
+
+        return Ok(new { statusCode = StatusCodes.Status200OK, message = result.Message });
+    }
+
     private bool TryGetCurrentUserId(out Guid userId)
     {
         var userIdClaim = User.FindFirstValue("id");
