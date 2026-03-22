@@ -68,6 +68,8 @@ builder.Services.AddScoped<ITourService, TourService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IChatRepository, ChatRepository>();
 builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<ITourScheduleRepository, TourScheduleRepository>();
+builder.Services.AddScoped<ITourScheduleService, TourScheduleService>();
 
 var jwtKey = builder.Configuration["Jwt:Key"]
              ?? throw new InvalidOperationException("Missing Jwt:Key configuration.");
