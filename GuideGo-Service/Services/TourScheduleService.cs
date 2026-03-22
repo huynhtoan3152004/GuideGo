@@ -14,9 +14,16 @@ public class TourScheduleService : ITourScheduleService
         _scheduleRepository = scheduleRepository;
     }
 
-    public async Task<IEnumerable<TourScheduleResponseDto>> GetByTourIdAsync(Guid tourId)
+    public async Task<IEnumerable<TourScheduleResponseDto>> GetByTourIdAsync(Guid tourId, bool onlyAvailable = false)
     {
         var schedules = await _scheduleRepository.GetByTourIdAsync(tourId);
+
+        if (onlyAvailable)
+        {
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            schedules = schedules.Where(s => s.StartDate > today).ToList();
+        }
+
         return schedules.Select(MapToDto);
     }
 

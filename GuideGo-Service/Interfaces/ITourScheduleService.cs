@@ -4,7 +4,7 @@ namespace GuideGo_Service.Interfaces;
 
 public interface ITourScheduleService
 {
-    Task<IEnumerable<TourScheduleResponseDto>> GetByTourIdAsync(Guid tourId);
+    Task<IEnumerable<TourScheduleResponseDto>> GetByTourIdAsync(Guid tourId, bool onlyAvailable = false);
     Task<TourScheduleResponseDto?> GetByIdAsync(Guid id);
     Task<(bool Success, string Message, TourScheduleResponseDto? Data)> CreateAsync(CreateTourScheduleRequestDto request, Guid actorId, bool isAdmin);
     Task<(bool Success, string Message)> UpdateAsync(Guid id, UpdateTourScheduleRequestDto request, Guid actorId, bool isAdmin);
