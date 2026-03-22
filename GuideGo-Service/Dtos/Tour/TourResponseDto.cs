@@ -46,6 +46,15 @@ public class TourResponseDto
     [JsonPropertyName("guide_is_verified")]
     public bool GuideIsVerified { get; set; }
 
+    [JsonPropertyName("is_custom_request")]
+    public bool IsCustomRequest { get; set; }
+
+    [JsonPropertyName("requested_by_user_id")]
+    public Guid? RequestedByUserId { get; set; }
+
+    [JsonPropertyName("guide_request_status")]
+    public string GuideRequestStatus { get; set; } = string.Empty;
+
     [JsonPropertyName("price_per_person")]
     public decimal PricePerPerson { get; set; }
 

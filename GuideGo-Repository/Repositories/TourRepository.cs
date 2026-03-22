@@ -16,7 +16,21 @@ public class TourRepository : GenericRepository<Tour>, ITourRepository
     {
         return await _dbSet
             .AsNoTracking()
-            .Where(tour => tour.IsActive)
+            .Where(tour => tour.IsActive && tour.GuideRequestStatus == TourGuideRequestStatus.Accepted)
+            .Include(tour => tour.Location)
+            .Include(tour => tour.Images)
+            .Include(tour => tour.Guide)
+                .ThenInclude(guide => guide!.User)
+            .Include(tour => tour.Schedules)
+            .OrderByDescending(tour => tour.CreatedAt)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Tour>> GetMyRequestedToursAsync(Guid userId)
+    {
+        return await _dbSet
+            .AsNoTracking()
+            .Where(tour => tour.RequestedByUserId == userId)
             .Include(tour => tour.Location)
             .Include(tour => tour.Images)
             .Include(tour => tour.Guide)
@@ -42,7 +56,7 @@ public class TourRepository : GenericRepository<Tour>, ITourRepository
     {
         var query = _dbSet
             .AsNoTracking()
-            .Where(tour => tour.IsActive)
+            .Where(tour => tour.IsActive && tour.GuideRequestStatus == TourGuideRequestStatus.Accepted)
             .Include(tour => tour.Location)
             .Include(tour => tour.Images)
             .Include(tour => tour.Guide)
@@ -130,6 +144,17 @@ public class TourRepository : GenericRepository<Tour>, ITourRepository
             .Include(tour => tour.Guide)
                 .ThenInclude(guide => guide!.User)
             .Include(tour => tour.Schedules)
+            .FirstOrDefaultAsync(tour => tour.Id == id && tour.IsActive && tour.GuideRequestStatus == TourGuideRequestStatus.Accepted);
+    }
+
+    public async Task<Tour?> GetTourForOperationsAsync(Guid id)
+    {
+        return await _dbSet
+            .Include(tour => tour.Location)
+            .Include(tour => tour.Images)
+            .Include(tour => tour.Guide)
+                .ThenInclude(guide => guide!.User)
+            .Include(tour => tour.Schedules)
             .FirstOrDefaultAsync(tour => tour.Id == id && tour.IsActive);
     }
 
@@ -156,6 +181,11 @@ public class TourRepository : GenericRepository<Tour>, ITourRepository
         return await _context.Guides.AnyAsync(guide => guide.Id == guideId);
     }
 
+    public async Task<bool> ExistsUserAsync(Guid userId)
+    {
+        return await _context.Users.AnyAsync(user => user.Id == userId);
+    }
+
     public async Task<bool> ExistsActiveTourAsync(Guid tourId)
     {
         return await _dbSet.AnyAsync(tour => tour.Id == tourId && tour.IsActive);
@@ -174,6 +204,22 @@ public class TourRepository : GenericRepository<Tour>, ITourRepository
         return await _dbSet.AnyAsync(tour => tour.Id == tourId && tour.GuideId == guideId && tour.IsActive);
     }
 
+    public async Task<bool> IsTourRequestedByUserAsync(Guid tourId, Guid userId)
+    {
+        return await _dbSet.AnyAsync(tour =>
+            tour.Id == tourId &&
+            tour.RequestedByUserId == userId &&
+            tour.IsActive);
+    }
+
+    public async Task<bool> IsGuideAssignedToTourAsync(Guid tourId, Guid guideId)
+    {
+        return await _dbSet.AnyAsync(tour =>
+            tour.Id == tourId &&
+            tour.GuideId == guideId &&
+            tour.IsActive);
+    }
+
     public async Task<bool> HasActiveBookingsAsync(Guid tourId)
     {
         return await _context.Bookings.AnyAsync(booking =>
@@ -184,6 +230,91 @@ public class TourRepository : GenericRepository<Tour>, ITourRepository
     public async Task AddTourImageAsync(TourImage tourImage)
     {
         await _context.TourImages.AddAsync(tourImage);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<IEnumerable<Guide>> FindSuitableGuidesAsync(Guid locationId, string? language, bool verifiedOnly, int limit)
+    {
+        var normalizedLanguage = language?.Trim().ToLower();
+
+        var query = _context.Guides
+            .AsNoTracking()
+            .Include(guide => guide.User)
+            .AsQueryable();
+
+        if (verifiedOnly)
+        {
+            query = query.Where(guide => guide.IsVerified);
+        }
+
+        if (!string.IsNullOrWhiteSpace(normalizedLanguage))
+        {
+            query = query.Where(guide => guide.Languages.Any(item => item.ToLower() == normalizedLanguage));
+        }
+
+        query = query.Where(guide =>
+            _dbSet.Any(tour =>
+                tour.GuideId == guide.Id &&
+                tour.LocationId == locationId &&
+                tour.IsActive &&
+                tour.GuideRequestStatus == TourGuideRequestStatus.Accepted));
+
+        var items = await query
+            .OrderByDescending(guide => guide.IsVerified)
+            .ThenByDescending(guide => guide.Rating)
+            .ThenByDescending(guide => guide.ExperienceYears)
+            .Take(limit)
+            .ToListAsync();
+
+        if (items.Count > 0)
+        {
+            return items;
+        }
+
+        var fallbackQuery = _context.Guides
+            .AsNoTracking()
+            .Include(guide => guide.User)
+            .AsQueryable();
+
+        if (verifiedOnly)
+        {
+            fallbackQuery = fallbackQuery.Where(guide => guide.IsVerified);
+        }
+
+        if (!string.IsNullOrWhiteSpace(normalizedLanguage))
+        {
+            fallbackQuery = fallbackQuery.Where(guide => guide.Languages.Any(item => item.ToLower() == normalizedLanguage));
+        }
+
+        return await fallbackQuery
+            .OrderByDescending(guide => guide.IsVerified)
+            .ThenByDescending(guide => guide.Rating)
+            .ThenByDescending(guide => guide.ExperienceYears)
+            .Take(limit)
+            .ToListAsync();
+    }
+
+    public async Task<TourSchedule?> GetScheduleByIdAsync(Guid scheduleId)
+    {
+        return await _context.TourSchedules
+            .FirstOrDefaultAsync(schedule => schedule.Id == scheduleId);
+    }
+
+    public async Task<TourSchedule?> GetScheduleByTourIdAsync(Guid tourId, Guid scheduleId)
+    {
+        return await _context.TourSchedules
+            .FirstOrDefaultAsync(schedule => schedule.Id == scheduleId && schedule.TourId == tourId);
+    }
+
+    public async Task AddTourScheduleAsync(TourSchedule schedule)
+    {
+        await _context.TourSchedules.AddAsync(schedule);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task UpdateTourScheduleAsync(TourSchedule schedule)
+    {
+        _context.TourSchedules.Update(schedule);
         await _context.SaveChangesAsync();
     }
 

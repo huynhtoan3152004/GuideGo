@@ -34,6 +34,22 @@ public class TourController : ControllerBase
     }
 
     /// <summary>
+    /// Lấy danh sách tour request do chính người dùng tạo.
+    /// </summary>
+    [HttpGet("my-requests")]
+    [Authorize(Roles = "Tourist,Company,Admin")]
+    public async Task<IActionResult> GetMyRequests()
+    {
+        if (!TryGetCurrentUserId(out var actorId))
+        {
+            return Unauthorized(new { statusCode = StatusCodes.Status401Unauthorized, message = "Token không hợp lệ." });
+        }
+
+        var tours = await _tourService.GetMyRequestedToursAsync(actorId);
+        return Ok(tours);
+    }
+
+    /// <summary>
     /// Tìm kiếm tour theo từ khóa, địa điểm, giá, ngày đi, ngôn ngữ và trạng thái xác minh guide.
     /// </summary>
     /// <param name="request">Bộ lọc tìm kiếm tour.</param>
@@ -43,6 +59,21 @@ public class TourController : ControllerBase
     {
         var result = await _tourService.SearchToursAsync(request);
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Gợi ý hướng dẫn viên phù hợp theo location/language.
+    /// </summary>
+    [HttpGet("suitable-guides")]
+    [Authorize(Roles = "Tourist,Company,Admin")]
+    public async Task<IActionResult> GetSuitableGuides(
+        [FromQuery(Name = "location_id")] Guid locationId,
+        [FromQuery(Name = "language")] string? language,
+        [FromQuery(Name = "verified_only")] bool verifiedOnly = true,
+        [FromQuery(Name = "limit")] int limit = 20)
+    {
+        var guides = await _tourService.GetSuitableGuidesAsync(locationId, language, verifiedOnly, limit);
+        return Ok(guides);
     }
 
     /// <summary>
@@ -110,6 +141,115 @@ public class TourController : ControllerBase
     }
 
     /// <summary>
+    /// Người dùng tạo yêu cầu tour riêng và có thể chọn guide ưu tiên.
+    /// </summary>
+    [HttpPost("requests")]
+    [Authorize(Roles = "Tourist,Company,Admin")]
+    public async Task<IActionResult> CreateRequest([FromBody] CreateUserTourRequestDto request)
+    {
+        if (!ModelState.IsValid)
+        {
+            var errorMessage = ModelState.Values
+                .SelectMany(value => value.Errors)
+                .Select(error => error.ErrorMessage)
+                .FirstOrDefault() ?? "Dữ liệu không hợp lệ.";
+
+            return BadRequest(new { statusCode = StatusCodes.Status400BadRequest, message = errorMessage });
+        }
+
+        if (!TryGetCurrentUserId(out var actorId))
+        {
+            return Unauthorized(new { statusCode = StatusCodes.Status401Unauthorized, message = "Token không hợp lệ." });
+        }
+
+        var result = await _tourService.CreateUserTourRequestAsync(request, actorId);
+        if (!result.Success)
+        {
+            return BadRequest(new { statusCode = StatusCodes.Status400BadRequest, message = result.Message });
+        }
+
+        return Ok(new
+        {
+            statusCode = StatusCodes.Status200OK,
+            message = result.Message,
+            data = result.Data
+        });
+    }
+
+    /// <summary>
+    /// Người dùng chọn guide cho yêu cầu tour của mình.
+    /// </summary>
+    [HttpPost("{id:guid}/assign-guide")]
+    [Authorize(Roles = "Tourist,Company,Admin")]
+    public async Task<IActionResult> AssignGuide(Guid id, [FromBody] AssignGuideToTourRequestDto request)
+    {
+        if (!ModelState.IsValid)
+        {
+            var errorMessage = ModelState.Values
+                .SelectMany(value => value.Errors)
+                .Select(error => error.ErrorMessage)
+                .FirstOrDefault() ?? "Dữ liệu không hợp lệ.";
+
+            return BadRequest(new { statusCode = StatusCodes.Status400BadRequest, message = errorMessage });
+        }
+
+        if (!TryGetCurrentUserId(out var actorId))
+        {
+            return Unauthorized(new { statusCode = StatusCodes.Status401Unauthorized, message = "Token không hợp lệ." });
+        }
+
+        var result = await _tourService.AssignGuideToRequestedTourAsync(id, actorId, request.GuideId);
+        if (!result.Success)
+        {
+            if (result.Message.Contains("quyền", StringComparison.OrdinalIgnoreCase))
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { statusCode = StatusCodes.Status403Forbidden, message = result.Message });
+            }
+
+            if (result.Message.Contains("không tìm thấy", StringComparison.OrdinalIgnoreCase))
+            {
+                return NotFound(new { statusCode = StatusCodes.Status404NotFound, message = result.Message });
+            }
+
+            return BadRequest(new { statusCode = StatusCodes.Status400BadRequest, message = result.Message });
+        }
+
+        return Ok(new { statusCode = StatusCodes.Status200OK, message = result.Message });
+    }
+
+    /// <summary>
+    /// Guide phản hồi có nhận tour request hay không.
+    /// </summary>
+    [HttpPost("{id:guid}/guide-decision")]
+    [Authorize(Roles = "Guide")]
+    public async Task<IActionResult> GuideDecision(Guid id, [FromBody] GuideDecisionRequestDto request)
+    {
+        if (!TryGetCurrentUserId(out var actorId))
+        {
+            return Unauthorized(new { statusCode = StatusCodes.Status401Unauthorized, message = "Token không hợp lệ." });
+        }
+
+        var result = await _tourService.RespondToRequestedTourAsync(id, actorId, request.Accept);
+        if (!result.Success)
+        {
+            if (result.Message.Contains("quyền", StringComparison.OrdinalIgnoreCase) ||
+                result.Message.Contains("không được gán", StringComparison.OrdinalIgnoreCase))
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { statusCode = StatusCodes.Status403Forbidden, message = result.Message });
+            }
+
+            if (result.Message.Contains("không tìm thấy", StringComparison.OrdinalIgnoreCase))
+            {
+                return NotFound(new { statusCode = StatusCodes.Status404NotFound, message = result.Message });
+            }
+
+            return BadRequest(new { statusCode = StatusCodes.Status400BadRequest, message = result.Message });
+        }
+
+        return Ok(new { statusCode = StatusCodes.Status200OK, message = result.Message });
+    }
+
+    /// <summary>
     /// Cập nhật tour theo id. Chỉ owner Guide hoặc Admin được phép.
     /// </summary>
     /// <param name="id">Id tour.</param>
@@ -148,6 +288,94 @@ public class TourController : ControllerBase
 
             if (result.Message.Contains("not found", StringComparison.OrdinalIgnoreCase) ||
                 result.Message.Contains("không tìm thấy", StringComparison.OrdinalIgnoreCase))
+            {
+                return NotFound(new { statusCode = StatusCodes.Status404NotFound, message = result.Message });
+            }
+
+            return BadRequest(new { statusCode = StatusCodes.Status400BadRequest, message = result.Message });
+        }
+
+        return Ok(new { statusCode = StatusCodes.Status200OK, message = result.Message });
+    }
+
+    /// <summary>
+    /// Tạo lịch chạy cho tour.
+    /// </summary>
+    [HttpPost("schedules")]
+    [Authorize(Roles = "Guide,Admin")]
+    public async Task<IActionResult> CreateSchedule([FromBody] CreateTourScheduleRequestDto request)
+    {
+        if (!ModelState.IsValid)
+        {
+            var errorMessage = ModelState.Values
+                .SelectMany(value => value.Errors)
+                .Select(error => error.ErrorMessage)
+                .FirstOrDefault() ?? "Dữ liệu không hợp lệ.";
+
+            return BadRequest(new { statusCode = StatusCodes.Status400BadRequest, message = errorMessage });
+        }
+
+        if (!TryGetCurrentUserId(out var actorId))
+        {
+            return Unauthorized(new { statusCode = StatusCodes.Status401Unauthorized, message = "Token không hợp lệ." });
+        }
+
+        var isAdmin = User.IsInRole("Admin") ||
+                      string.Equals(User.FindFirstValue("role"), "Admin", StringComparison.OrdinalIgnoreCase);
+
+        var result = await _tourService.CreateScheduleAsync(request, actorId, isAdmin);
+        if (!result.Success)
+        {
+            if (result.Message.Contains("quyền", StringComparison.OrdinalIgnoreCase))
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { statusCode = StatusCodes.Status403Forbidden, message = result.Message });
+            }
+
+            if (result.Message.Contains("không tìm thấy", StringComparison.OrdinalIgnoreCase))
+            {
+                return NotFound(new { statusCode = StatusCodes.Status404NotFound, message = result.Message });
+            }
+
+            return BadRequest(new { statusCode = StatusCodes.Status400BadRequest, message = result.Message });
+        }
+
+        return Ok(new { statusCode = StatusCodes.Status200OK, message = result.Message });
+    }
+
+    /// <summary>
+    /// Cập nhật lịch tour theo tourId và scheduleId.
+    /// </summary>
+    [HttpPut("{id:guid}/schedules/{scheduleId:guid}")]
+    [Authorize(Roles = "Guide,Admin")]
+    public async Task<IActionResult> UpdateSchedule(Guid id, Guid scheduleId, [FromBody] UpdateTourScheduleRequestDto request)
+    {
+        if (!ModelState.IsValid)
+        {
+            var errorMessage = ModelState.Values
+                .SelectMany(value => value.Errors)
+                .Select(error => error.ErrorMessage)
+                .FirstOrDefault() ?? "Dữ liệu không hợp lệ.";
+
+            return BadRequest(new { statusCode = StatusCodes.Status400BadRequest, message = errorMessage });
+        }
+
+        if (!TryGetCurrentUserId(out var actorId))
+        {
+            return Unauthorized(new { statusCode = StatusCodes.Status401Unauthorized, message = "Token không hợp lệ." });
+        }
+
+        var isAdmin = User.IsInRole("Admin") ||
+                      string.Equals(User.FindFirstValue("role"), "Admin", StringComparison.OrdinalIgnoreCase);
+
+        var result = await _tourService.UpdateScheduleAsync(id, scheduleId, request, actorId, isAdmin);
+        if (!result.Success)
+        {
+            if (result.Message.Contains("quyền", StringComparison.OrdinalIgnoreCase))
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { statusCode = StatusCodes.Status403Forbidden, message = result.Message });
+            }
+
+            if (result.Message.Contains("không tìm thấy", StringComparison.OrdinalIgnoreCase))
             {
                 return NotFound(new { statusCode = StatusCodes.Status404NotFound, message = result.Message });
             }
@@ -269,7 +497,9 @@ public class TourController : ControllerBase
 
     private bool TryGetCurrentUserId(out Guid userId)
     {
-        var userIdClaim = User.FindFirstValue("id");
+        var userIdClaim = User.FindFirstValue("id")
+                          ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+                          ?? User.FindFirstValue("sub");
         return Guid.TryParse(userIdClaim, out userId);
     }
 }

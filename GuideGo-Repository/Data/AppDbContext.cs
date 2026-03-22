@@ -80,6 +80,10 @@ public class AppDbContext : DbContext
             e.Property(t => t.GroupPricePerPerson).HasColumnType("decimal(10,2)");
             e.Property(t => t.Rating).HasColumnType("decimal(2,1)");
             e.Property(t => t.IsActive).HasDefaultValue(true);
+            e.Property(t => t.IsCustomRequest).HasDefaultValue(false);
+            e.Property(t => t.GuideRequestStatus)
+             .HasConversion<string>()
+             .HasMaxLength(20);
             e.Property(t => t.UpdatedAt).HasDefaultValueSql("now()");
             e.HasOne(t => t.Location)
              .WithMany(l => l.Tours)

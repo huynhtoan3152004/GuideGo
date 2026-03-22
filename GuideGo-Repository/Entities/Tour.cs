@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using GuideGo_Repository.Enums;
 
 namespace GuideGo_Repository.Entities;
 
@@ -22,6 +23,9 @@ public class Tour
     public int DurationDays { get; set; }
     public decimal Rating { get; set; }
     public bool IsActive { get; set; } = true;
+    public bool IsCustomRequest { get; set; } = false;
+    public Guid? RequestedByUserId { get; set; }
+    public TourGuideRequestStatus GuideRequestStatus { get; set; } = TourGuideRequestStatus.Accepted;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
