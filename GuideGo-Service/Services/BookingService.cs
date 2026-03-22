@@ -42,7 +42,7 @@ public class BookingService : IBookingService
         {
             if (item.Schedule.StartDate <= today)
                 throw new InvalidOperationException(
-                    $"Tour '{item.Schedule.Tour.Title}' has already started or passed.");
+                    $"Lịch khởi hành của tour '{item.Schedule.Tour.Title}' đã hết hạn đặt chỗ. Vui lòng đặt trước ít nhất 1 ngày.");
 
             if (item.Schedule.AvailableSlots < item.PeopleCount)
                 throw new InvalidOperationException(

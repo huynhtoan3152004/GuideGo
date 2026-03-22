@@ -37,9 +37,9 @@ public class CartService : ICartService
             return (false, "Không tìm thấy lịch khởi hành phù hợp cho tour.");
         }
 
-        if (schedule.StartDate < DateOnly.FromDateTime(DateTime.UtcNow))
+        if (schedule.StartDate <= DateOnly.FromDateTime(DateTime.UtcNow))
         {
-            return (false, "Không thể thêm lịch đã hết hạn vào giỏ hàng.");
+            return (false, $"Không thể thêm vào giỏ hàng. Lịch khởi hành ngày {schedule.StartDate:dd/MM/yyyy} đã hết hạn đặt chỗ (phải đặt trước tối thiểu 1 ngày).");
         }
 
         if (request.PeopleCount > schedule.AvailableSlots)

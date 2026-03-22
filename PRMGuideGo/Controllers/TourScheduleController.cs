@@ -25,9 +25,9 @@ public class TourScheduleController : ControllerBase
     /// </summary>
     /// <param name="tourId">Id tour.</param>
     [HttpGet("tour/{tourId:guid}")]
-    public async Task<IActionResult> GetByTourId(Guid tourId)
+    public async Task<IActionResult> GetByTourId(Guid tourId, [FromQuery] bool onlyAvailable = false)
     {
-        var schedules = await _scheduleService.GetByTourIdAsync(tourId);
+        var schedules = await _scheduleService.GetByTourIdAsync(tourId, onlyAvailable);
         return Ok(schedules);
     }
 
