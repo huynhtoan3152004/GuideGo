@@ -27,6 +27,18 @@ public class TourService : ITourService
         return tours.Select(MapToDto);
     }
 
+    public async Task<IEnumerable<TourResponseDto>> GetGuideRequestsAsync(Guid userId)
+    {
+        var guideId = await _tourRepository.GetGuideIdByUserIdAsync(userId);
+        if (!guideId.HasValue)
+        {
+            return [];
+        }
+
+        var tours = await _tourRepository.GetGuideAssignedToursAsync(guideId.Value);
+        return tours.Select(MapToDto);
+    }
+
     public async Task<IEnumerable<SuitableGuideDto>> GetSuitableGuidesAsync(Guid locationId, string? language, bool verifiedOnly, int limit)
     {
         if (!await _tourRepository.ExistsLocationAsync(locationId))

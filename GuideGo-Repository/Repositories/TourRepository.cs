@@ -40,6 +40,20 @@ public class TourRepository : GenericRepository<Tour>, ITourRepository
             .ToListAsync();
     }
 
+    public async Task<IEnumerable<Tour>> GetGuideAssignedToursAsync(Guid guideId)
+    {
+        return await _dbSet
+            .AsNoTracking()
+            .Where(tour => tour.GuideId == guideId && tour.IsActive)
+            .Include(tour => tour.Location)
+            .Include(tour => tour.Images)
+            .Include(tour => tour.Guide)
+                .ThenInclude(guide => guide!.User)
+            .Include(tour => tour.Schedules)
+            .OrderByDescending(tour => tour.CreatedAt)
+            .ToListAsync();
+    }
+
     public async Task<(IEnumerable<Tour> Items, int TotalItems)> SearchActiveToursAsync(
         string? keyword,
         string? city,

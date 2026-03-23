@@ -50,6 +50,23 @@ public class TourController : ControllerBase
     }
 
     /// <summary>
+    /// Lấy danh sách tất cả tour được assign cho guide đang đăng nhập,
+    /// bao gồm cả custom requests từ tourist và regular tours.
+    /// </summary>
+    [HttpGet("guide-requests")]
+    [Authorize(Roles = "Guide")]
+    public async Task<IActionResult> GetGuideRequests()
+    {
+        if (!TryGetCurrentUserId(out var actorId))
+        {
+            return Unauthorized(new { statusCode = StatusCodes.Status401Unauthorized, message = "Token không hợp lệ." });
+        }
+
+        var tours = await _tourService.GetGuideRequestsAsync(actorId);
+        return Ok(tours);
+    }
+
+    /// <summary>
     /// Tìm kiếm tour theo từ khóa, địa điểm, giá, ngày đi, ngôn ngữ và trạng thái xác minh guide.
     /// </summary>
     /// <param name="request">Bộ lọc tìm kiếm tour.</param>

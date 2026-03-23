@@ -6,6 +6,7 @@ public interface ITourRepository
 {
     Task<IEnumerable<Tour>> GetAllActiveToursAsync();
     Task<IEnumerable<Tour>> GetMyRequestedToursAsync(Guid userId);
+    Task<IEnumerable<Tour>> GetGuideAssignedToursAsync(Guid guideId);
     Task<(IEnumerable<Tour> Items, int TotalItems)> SearchActiveToursAsync(
         string? keyword,
         string? city,

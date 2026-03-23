@@ -6,6 +6,7 @@ public interface ITourService
 {
     Task<IEnumerable<TourResponseDto>> GetAllActiveToursAsync();
     Task<IEnumerable<TourResponseDto>> GetMyRequestedToursAsync(Guid userId);
+    Task<IEnumerable<TourResponseDto>> GetGuideRequestsAsync(Guid userId);
     Task<TourSearchResultDto> SearchToursAsync(SearchToursRequestDto request);
     Task<IEnumerable<SuitableGuideDto>> GetSuitableGuidesAsync(Guid locationId, string? language, bool verifiedOnly, int limit);
     Task<TourResponseDto?> GetTourByIdAsync(Guid id);
