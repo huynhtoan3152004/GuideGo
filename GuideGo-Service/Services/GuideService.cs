@@ -20,12 +20,13 @@ namespace GuideGo_Service.Services
 
         public async Task<IEnumerable<GuideDto>> GetAllGuides()
         {
-            var guides = await _guideRepository.GetAllAsync();
+            var guides = await _guideRepository.GetAllWithUserAsync();
 
             return guides.Select(g => new GuideDto
             {
                 Id = g.Id,
                 UserId = g.UserId,
+                FullName = g.User.FullName,
                 ExperienceYears = g.ExperienceYears,
                 Languages = g.Languages,
                 Description = g.Description,
@@ -62,6 +63,7 @@ namespace GuideGo_Service.Services
             {
                 Id = guide.Id,
                 UserId = guide.UserId,
+                FullName = guide.User.FullName,
                 ExperienceYears = guide.ExperienceYears,
                 Languages = guide.Languages,
                 Description = guide.Description,

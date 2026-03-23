@@ -11,9 +11,17 @@ namespace GuideGo_Repository.Repositories
         {
         }
 
+        public async Task<IEnumerable<Guide>> GetAllWithUserAsync()
+        {
+            return await _dbSet
+                .Include(g => g.User)
+                .ToListAsync();
+        }
         public async Task<Guide?> GetByUserIdAsync(Guid userId)
         {
-            return await _dbSet.FirstOrDefaultAsync(g => g.UserId == userId);
+            return await _dbSet
+                .Include(g => g.User)
+                .FirstOrDefaultAsync(g => g.UserId == userId);
         }
     }
 }
