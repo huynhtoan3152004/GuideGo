@@ -29,7 +29,7 @@ public class CreateUserTourRequestDto
     [JsonPropertyName("people_count")]
     public int PeopleCount { get; set; }
 
-    [Range(typeof(decimal), "0.01", "9999999999", ErrorMessage = "budget_per_person phải lớn hơn 0.")]
+    [Range(0.01, 9999999999.0, ErrorMessage = "budget_per_person phải lớn hơn 0.")]
     [JsonPropertyName("budget_per_person")]
     public decimal BudgetPerPerson { get; set; }
 
