@@ -7,6 +7,8 @@ public interface IReviewRepository
     Task<IEnumerable<Review>> GetAllWithDetailsAsync();
     Task<Review?> GetByIdWithDetailsAsync(Guid id);
     Task<IEnumerable<Review>> GetByUserIdAsync(Guid userId);
+    Task<IEnumerable<Review>> GetByTourIdAsync(Guid tourId);
+    Task<IEnumerable<Review>> GetByGuideIdAsync(Guid guideId);
     Task<Review?> GetByIdAsync(Guid id);
     Task<Review?> GetByIdAndUserIdAsync(Guid id, Guid userId);
     Task<bool> TourExistsWithGuideAsync(Guid tourId);

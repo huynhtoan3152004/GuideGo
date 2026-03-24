@@ -22,13 +22,42 @@ public class ReviewController : ControllerBase
     }
 
     /// <summary>
-    /// API lấy toàn bộ review công khai, không cần đăng nhập.
+    /// Lấy danh sách reviews. Hỗ trợ filter theo tour_id hoặc guide_id.
+    /// Không truyền gì → trả về tất cả reviews công khai.
     /// </summary>
     [HttpGet]
     [AllowAnonymous]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(
+        [FromQuery(Name = "tour_id")] Guid? tourId,
+        [FromQuery(Name = "guide_id")] Guid? guideId)
     {
+        if (tourId.HasValue)
+        {
+            var byTour = await _reviewService.GetByTourIdAsync(tourId.Value);
+            return Ok(byTour);
+        }
+
+        if (guideId.HasValue)
+        {
+            var byGuide = await _reviewService.GetByGuideIdAsync(guideId.Value);
+            return Ok(byGuide);
+        }
+
         var reviews = await _reviewService.GetAllAsync();
+        return Ok(reviews);
+    }
+
+    /// <summary>
+    /// Lấy danh sách reviews do chính tourist đang đăng nhập viết.
+    /// </summary>
+    [HttpGet("my-reviews")]
+    [Authorize(Roles = "Tourist")]
+    public async Task<IActionResult> GetMyReviews()
+    {
+        if (!TryGetCurrentUserId(out var userId))
+            return Unauthorized(new { statusCode = StatusCodes.Status401Unauthorized, message = "Invalid token." });
+
+        var reviews = await _reviewService.GetMyReviewsAsync(userId);
         return Ok(reviews);
     }
 

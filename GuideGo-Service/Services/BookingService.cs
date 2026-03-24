@@ -11,13 +11,16 @@ public class BookingService : IBookingService
 {
     private readonly IGenericRepository<Booking> _bookingRepo;
     private readonly IGenericRepository<Cart> _cartRepo;
+    private readonly IGenericRepository<Guide> _guideRepo;
 
     public BookingService(
         IGenericRepository<Booking> bookingRepo,
-        IGenericRepository<Cart> cartRepo)
+        IGenericRepository<Cart> cartRepo,
+        IGenericRepository<Guide> guideRepo)
     {
         _bookingRepo = bookingRepo;
         _cartRepo    = cartRepo;
+        _guideRepo   = guideRepo;
     }
 
     public async Task<IEnumerable<BookingResponseDto>> CreateBookingAsync(BookingCreateDto dto, Guid userId, string userRole)
@@ -47,7 +50,6 @@ public class BookingService : IBookingService
             if (item.Schedule.AvailableSlots < item.PeopleCount)
                 throw new InvalidOperationException(
                     $"Not enough slots for '{item.Schedule.Tour.Title}'. Available: {item.Schedule.AvailableSlots}.");
-
         }
 
         var bookings = new List<Booking>();
@@ -113,9 +115,41 @@ public class BookingService : IBookingService
         if (booking.Status == BookingStatus.Cancelled)
             throw new InvalidOperationException("Booking is already cancelled.");
 
+        if (booking.Status == BookingStatus.Completed)
+            throw new InvalidOperationException("Không thể hủy booking đã hoàn thành.");
+
         booking.Status = BookingStatus.Cancelled;
         booking.Schedule.AvailableSlots += booking.PeopleCount;
 
+        await _bookingRepo.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> CompleteBookingAsync(Guid bookingId, Guid actorId, bool isAdmin)
+    {
+        var booking = await _bookingRepo.Query()
+            .Include(b => b.Schedule)
+                .ThenInclude(s => s.Tour)
+            .FirstOrDefaultAsync(b => b.Id == bookingId)
+            ?? throw new KeyNotFoundException("Không tìm thấy booking.");
+
+        if (booking.Status != BookingStatus.Confirmed)
+            throw new InvalidOperationException("Chỉ có thể hoàn thành booking đang ở trạng thái Confirmed.");
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        if (booking.Schedule.EndDate > today)
+            throw new InvalidOperationException("Tour chưa kết thúc, không thể đánh dấu hoàn thành.");
+
+        if (!isAdmin)
+        {
+            var guide = await _guideRepo.Query()
+                .FirstOrDefaultAsync(g => g.UserId == actorId);
+
+            if (guide is null || booking.Schedule.Tour.GuideId != guide.Id)
+                throw new UnauthorizedAccessException("Bạn không có quyền hoàn thành booking này.");
+        }
+
+        booking.Status = BookingStatus.Completed;
         await _bookingRepo.SaveChangesAsync();
         return true;
     }

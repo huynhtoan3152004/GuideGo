@@ -72,7 +72,7 @@ public class BookingController : ControllerBase
     }
 
     /// <summary>
-    /// Hủy một booking theo id. Chỉ được hủy khi booking chưa được xử lý.
+    /// Hủy một booking theo id. Không thể hủy booking đã hoàn thành.
     /// </summary>
     [HttpPut("{id:guid}/cancel")]
     public async Task<IActionResult> CancelBooking(Guid id)
@@ -83,6 +83,39 @@ public class BookingController : ControllerBase
             if (!success)
                 return NotFound(new { message = "Booking not found." });
             return Ok(new { message = "Booking cancelled successfully." });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Đánh dấu booking hoàn thành sau khi tour kết thúc.
+    /// Chỉ Guide được gán cho tour hoặc Admin được phép.
+    /// Điều kiện: booking.Status == Confirmed và schedule.EndDate &lt;= hôm nay.
+    /// </summary>
+    [HttpPatch("{id:guid}/complete")]
+    [Authorize(Roles = "Guide,Admin")]
+    public async Task<IActionResult> CompleteBooking(Guid id)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("id"), out var actorId))
+            return Unauthorized(new { message = "Token không hợp lệ." });
+
+        var isAdmin = User.IsInRole("Admin") ||
+                      string.Equals(User.FindFirstValue("role"), "Admin", StringComparison.OrdinalIgnoreCase);
+        try
+        {
+            await _bookingService.CompleteBookingAsync(id, actorId, isAdmin);
+            return Ok(new { message = "Booking đã được đánh dấu hoàn thành." });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
         }
         catch (InvalidOperationException ex)
         {

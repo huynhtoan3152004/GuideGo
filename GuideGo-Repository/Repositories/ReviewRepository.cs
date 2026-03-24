@@ -32,7 +32,29 @@ public class ReviewRepository : GenericRepository<Review>, IReviewRepository
     public async Task<IEnumerable<Review>> GetByUserIdAsync(Guid userId)
     {
         return await _dbSet
+            .Include(review => review.User)
+            .Include(review => review.Tour)
             .Where(review => review.UserId == userId)
+            .OrderByDescending(review => review.CreatedAt)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Review>> GetByTourIdAsync(Guid tourId)
+    {
+        return await _dbSet
+            .Include(review => review.User)
+            .Include(review => review.Tour)
+            .Where(review => review.TourId == tourId)
+            .OrderByDescending(review => review.CreatedAt)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Review>> GetByGuideIdAsync(Guid guideId)
+    {
+        return await _dbSet
+            .Include(review => review.User)
+            .Include(review => review.Tour)
+            .Where(review => review.Tour.GuideId == guideId)
             .OrderByDescending(review => review.CreatedAt)
             .ToListAsync();
     }
@@ -84,8 +106,8 @@ public class ReviewRepository : GenericRepository<Review>, IReviewRepository
                       join schedule in _context.TourSchedules on booking.ScheduleId equals schedule.Id
                       where booking.UserId == userId
                             && schedule.TourId == tourId
-                            && booking.Status == BookingStatus.Confirmed
-                        && schedule.EndDate <= today
+                            && (booking.Status == BookingStatus.Completed
+                                || (booking.Status == BookingStatus.Confirmed && schedule.EndDate <= today))
                       select booking)
             .AnyAsync();
     }

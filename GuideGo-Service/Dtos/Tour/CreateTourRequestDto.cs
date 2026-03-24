@@ -39,7 +39,7 @@ public class CreateTourRequestDto
     /// Giá tiền cho mỗi người tham gia.
     /// </summary>
     [Required(ErrorMessage = "Giá mỗi người là bắt buộc.")]
-    [Range(typeof(decimal), "0.01", "9999999999", ErrorMessage = "Giá mỗi người phải lớn hơn 0.")]
+    [Range(0.01, 9999999999.0, ErrorMessage = "Giá mỗi người phải lớn hơn 0.")]
     [JsonPropertyName("price_per_person")]
     public decimal PricePerPerson { get; set; }
 

@@ -20,6 +20,24 @@ public class ReviewService : IReviewService
         return reviews.Select(MapToDto);
     }
 
+    public async Task<IEnumerable<ReviewResponseDto>> GetByTourIdAsync(Guid tourId)
+    {
+        var reviews = await _reviewRepository.GetByTourIdAsync(tourId);
+        return reviews.Select(MapToDto);
+    }
+
+    public async Task<IEnumerable<ReviewResponseDto>> GetByGuideIdAsync(Guid guideId)
+    {
+        var reviews = await _reviewRepository.GetByGuideIdAsync(guideId);
+        return reviews.Select(MapToDto);
+    }
+
+    public async Task<IEnumerable<ReviewResponseDto>> GetMyReviewsAsync(Guid userId)
+    {
+        var reviews = await _reviewRepository.GetByUserIdAsync(userId);
+        return reviews.Select(MapToDto);
+    }
+
     public async Task<ReviewResponseDto?> GetByIdAsync(Guid reviewId)
     {
         var review = await _reviewRepository.GetByIdWithDetailsAsync(reviewId);
